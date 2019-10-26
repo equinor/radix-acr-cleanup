@@ -1,0 +1,26 @@
+clusterType: development
+deleteUntagged: false
+
+replicaCount: 1
+
+image:
+  repository: radix-acr-cleanup
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+resources: 
+  limits:
+    memory: 300Mi
+  requests:
+    cpu: 100m
+    memory: 300Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
