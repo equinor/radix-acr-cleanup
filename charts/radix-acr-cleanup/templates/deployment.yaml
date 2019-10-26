@@ -23,6 +23,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           args:
+          - --registry={{ .Values.registry }}
           - --clusterType={{ .Values.clusterType }}
           - --deleteUntagged={{ .Values.deleteUntagged }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
