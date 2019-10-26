@@ -143,7 +143,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) 
 			}
 
 			if !existInCluster {
-				deleteManifest(registry, repository, manifest.Digest)
+				//deleteManifest(registry, repository, manifest.Digest)
 				println(fmt.Sprintf("Deleted digest %s for repository %s", manifest.Digest, repository))
 				addImageDeleted(clusterType)
 			}
