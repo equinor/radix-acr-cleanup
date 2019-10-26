@@ -116,7 +116,8 @@ func deleteImagesBelongingTo(registry, clusterType *string, deleteUntagged *bool
 			}
 
 			if !existInCluster {
-				println(fmt.Sprintf("Delete digest %s", manifest.Digest))
+				deleteManifest(*registry, repository, manifest.Digest)
+				println(fmt.Sprintf("Deleted digest %s for repository %s", manifest.Digest, repository))
 			}
 		}
 
@@ -301,4 +302,30 @@ func getManifestsFromStringData(data string) []Manifest {
 		return maifests
 	}
 	return maifests
+}
+
+func deleteManifest(registry, repository, digest string) {
+	listCmd := newDeleteManifestsCommand(registry, repository, digest)
+
+	var outb bytes.Buffer
+	listCmd.Stdout = &outb
+
+	if err := listCmd.Run(); err != nil {
+		log.Errorf("Error deleting manifest: %v", err)
+	}
+}
+
+func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
+	args := []string{"acr", "repository", "delete",
+		"--name", registry,
+		"--image", fmt.Sprintf("%s@%s", repository, digest),
+		"--yes"}
+
+	cmd := exec.Command("az", args...)
+	cmd.Stderr = log.NewEntry(log.StandardLogger()).
+		WithField("cmd", cmd.Args[0]).
+		WithField("std", "err").
+		WriterLevel(log.WarnLevel)
+
+	return cmd
 }
