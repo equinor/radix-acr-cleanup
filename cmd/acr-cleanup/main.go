@@ -4,14 +4,20 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
+	"github.com/equinor/radix-acr-cleanup/pkg/delaytick"
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +27,16 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var clusterTypes = [...]string{"development", "production", "playground"}
+const clusterTypeLabel = "clusterType"
+
+var (
+	clusterTypes    = [...]string{"development", "production", "playground"}
+	nrImagesDeleted = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "radix_acr_images_deleted",
+			Help: "The total number of image manifests deleted",
+		}, []string{clusterTypeLabel})
+)
 
 type Image struct {
 	Registry   string
@@ -39,6 +54,7 @@ func main() {
 	fs := initializeFlagSet()
 
 	var (
+		period         = fs.Duration("period", time.Minute*60, "Interval between checks")
 		registry       = fs.String("registry", "", "Name of the ACR registry (Required)")
 		clusterType    = fs.String("clusterType", "", "Type of cluster (Required)")
 		deleteUntagged = fs.Bool("deleteUntagged", false, "Solution can delete untagged images")
@@ -51,6 +67,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	go maintainImages(*period, *registry, *clusterType, *deleteUntagged)
+	http.Handle("/metrics", promhttp.Handler())
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func maintainImages(period time.Duration, registry, clusterType string, deleteUntagged bool) {
 	start := time.Now()
 
 	defer func() {
@@ -58,7 +80,12 @@ func main() {
 		println(fmt.Sprintf("It took %s to run", duration))
 	}()
 
-	deleteImagesBelongingTo(registry, clusterType, deleteUntagged)
+	source := rand.NewSource(time.Now().UnixNano())
+	tick := delaytick.New(source, period)
+	for time := range tick {
+		println(fmt.Sprintf("Start deleting images %s", time))
+		deleteImagesBelongingTo(registry, clusterType, deleteUntagged)
+	}
 }
 
 func initializeFlagSet() *pflag.FlagSet {
@@ -86,11 +113,11 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(registry, clusterType *string, deleteUntagged *bool) {
+func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) {
 	_, radixClient := getKubernetesClient()
 
 	images := listActiveImagesInCluster(radixClient)
-	repositories := listRepositories(*registry)
+	repositories := listRepositories(registry)
 
 	numRepositories := len(repositories)
 	processedRepositories := 0
@@ -98,14 +125,14 @@ func deleteImagesBelongingTo(registry, clusterType *string, deleteUntagged *bool
 	for _, repository := range repositories {
 		existInCluster, image := existInCluster(repository, images)
 
-		manifests := listManifests(*registry, repository)
+		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
 			isUntaggedForType := isUntaggedForType(manifest)
-			if isUntaggedForType && !*deleteUntagged {
+			if isUntaggedForType && !deleteUntagged {
 				continue
 			}
 
-			isTaggedForType := isTaggedForType(manifest, *clusterType)
+			isTaggedForType := isTaggedForType(manifest, clusterType)
 			if !isTaggedForType {
 				continue
 			}
@@ -116,8 +143,9 @@ func deleteImagesBelongingTo(registry, clusterType *string, deleteUntagged *bool
 			}
 
 			if !existInCluster {
-				deleteManifest(*registry, repository, manifest.Digest)
+				deleteManifest(registry, repository, manifest.Digest)
 				println(fmt.Sprintf("Deleted digest %s for repository %s", manifest.Digest, repository))
+				addImageDeleted(clusterType)
 			}
 		}
 
@@ -328,4 +356,8 @@ func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
 		WriterLevel(log.WarnLevel)
 
 	return cmd
+}
+
+func addImageDeleted(clusterType string) {
+	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType}).Inc()
 }

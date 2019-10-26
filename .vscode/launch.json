@@ -12,6 +12,7 @@
             "program": "${workspaceFolder}/cmd/acr-cleanup/main.go",
             "env": {},
             "args": [
+                "--period=10s",
                 "--registry=radixdev",
                 "--clusterType=development",
                 "--deleteUntagged=false"
