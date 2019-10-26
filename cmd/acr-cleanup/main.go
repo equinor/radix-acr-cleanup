@@ -97,7 +97,6 @@ func deleteImagesBelongingTo(registry, clusterType *string, deleteUntagged *bool
 
 	for _, repository := range repositories {
 		existInCluster, image := existInCluster(repository, images)
-		println(fmt.Sprintf("Processing repository %s", repository))
 
 		manifests := listManifests(*registry, repository)
 		for _, manifest := range manifests {
