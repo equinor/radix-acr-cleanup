@@ -20,10 +20,14 @@ RUN golint `go list ./...` && \
     CGO_ENABLED=0 GOOS=linux go test `go list ./...`
 
 # build
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-acr-cleanup
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-acr-cleanup ./cmd/acr-cleanup/.
 
-FROM scratch
+FROM microsoft/azure-cli:2.0.54
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/local/bin/radix-acr-cleanup /usr/local/bin/radix-acr-cleanup
+
+ENV TENANT=3aa4a235-b6e2-48d5-9195-7fcf05b459b0 \
+    AZURE_CREDENTIALS=/usr/local/bin/radix-acr-cleanup/.azure/sp_credentials.json
+
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/radix-acr-cleanup"]

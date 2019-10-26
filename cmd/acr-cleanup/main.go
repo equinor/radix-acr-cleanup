@@ -38,12 +38,14 @@ var (
 		}, []string{clusterTypeLabel})
 )
 
+// Image Structure to hold image information
 type Image struct {
 	Registry   string
 	Repository string
 	Tag        string
 }
 
+// Manifest Structure to hold manifest information
 type Manifest struct {
 	Digest    string
 	Tags      []string
