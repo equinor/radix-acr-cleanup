@@ -83,13 +83,6 @@ func main() {
 }
 
 func maintainImages(period time.Duration, registry, clusterType string, deleteUntagged, performDelete bool) {
-	start := time.Now()
-
-	defer func() {
-		duration := time.Since(start)
-		log.Infof("It took %s to run", duration)
-	}()
-
 	source := rand.NewSource(time.Now().UnixNano())
 	tick := delaytick.New(source, period)
 	for time := range tick {
@@ -124,6 +117,13 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 }
 
 func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, performDelete bool) {
+	start := time.Now()
+
+	defer func() {
+		duration := time.Since(start)
+		log.Infof("It took %s to run", duration)
+	}()
+
 	_, radixClient := getKubernetesClient()
 
 	images := listActiveImagesInCluster(radixClient)
