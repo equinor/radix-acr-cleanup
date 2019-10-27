@@ -17,6 +17,8 @@ build-push:
 deploy-via-helm:
 	make build-push
 
+	# Will need to be installed in default namespace
+	# as it relies on radix-sp-acr-azure secret
 	helm upgrade --install radix-acr-cleanup \
 	    ./charts/radix-acr-cleanup/ \
-		--namespace radix-acr-cleanup
+		--namespace default

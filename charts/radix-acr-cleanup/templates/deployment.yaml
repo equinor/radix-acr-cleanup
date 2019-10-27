@@ -28,9 +28,13 @@ spec:
             - name: CLUSTER_TYPE
               value: {{ .Values.clusterType }}
             - name: DELETE_UNTAGGED
-              value: {{ .Values.deleteUntagged }}
+              value: {{ .Values.deleteUntagged | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: radix-sp-acr-azure
+              mountPath: /{{ .Chart.Name }}/.azure/sp_credentials.json
+              readOnly: true
           ports:
             - name: http
               containerPort: 80
