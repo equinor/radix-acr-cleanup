@@ -166,7 +166,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 		processedRepositories++
 
 		if (processedRepositories % 10) == 0 {
-			log.Infof("Processed %d out of %d repositories", processedRepositories, numRepositories)
+			log.Debugf("Processed %d out of %d repositories", processedRepositories, numRepositories)
 		}
 	}
 }
