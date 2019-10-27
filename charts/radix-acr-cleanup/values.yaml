@@ -1,5 +1,5 @@
-registry: radixdev
-clusterType: development
+registry: xx
+clusterType: xx
 deleteUntagged: false
 performDelete: false
 servicePrincipalSecret: radix-sp-acr-azure
