@@ -96,7 +96,7 @@ func initializeFlagSet() *pflag.FlagSet {
 	fs := pflag.NewFlagSet("default", pflag.ContinueOnError)
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "DESCRIPTION\n")
-		fmt.Fprintf(os.Stderr, "  radix api-server.\n")
+		fmt.Fprintf(os.Stderr, "  Radix acr cleanup.\n")
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "FLAGS\n")
 		fs.PrintDefaults()
@@ -138,26 +138,29 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
-			isUntaggedForType := isUntaggedForType(manifest)
-			if isUntaggedForType && !deleteUntagged {
+			isNotTaggedForAnyClustertype := isNotTaggedForAnyClustertype(manifest)
+			if isNotTaggedForAnyClustertype && !deleteUntagged {
 				continue
 			}
 
-			isTaggedForType := isTaggedForType(manifest, clusterType)
-			if !isTaggedForType {
+			isTaggedForCurrentClustertype := isTaggedForCurrentClustertype(manifest, clusterType)
+			if !isTaggedForCurrentClustertype {
 				continue
 			}
 
-			isTagInCluster := isTagInCluster(manifest, image)
-			if isTagInCluster {
+			tagIsReferencedInCluster := tagIsReferencedInCluster(manifest, image)
+			if tagIsReferencedInCluster {
 				continue
 			}
 
 			if !existInCluster {
 				if performDelete {
+					// Will perfor an actual delete
 					deleteManifest(registry, repository, manifest.Digest)
 				}
 
+				// Will log a delete even if perform delete is false, so that
+				// we can test the consequences of this utility
 				log.Infof("Deleted digest %s for repository %s", manifest.Digest, repository)
 				addImageDeleted(clusterType, repository)
 			}
@@ -181,9 +184,9 @@ func existInCluster(repository string, images []Image) (bool, Image) {
 	return false, Image{}
 }
 
-func isUntaggedForType(manifest Manifest) bool {
+func isNotTaggedForAnyClustertype(manifest Manifest) bool {
 	for _, clusterType := range clusterTypes {
-		if isTaggedForType(manifest, clusterType) {
+		if isTaggedForCurrentClustertype(manifest, clusterType) {
 			return false
 		}
 	}
@@ -191,7 +194,7 @@ func isUntaggedForType(manifest Manifest) bool {
 	return true
 }
 
-func isTaggedForType(manifest Manifest, clusterType string) bool {
+func isTaggedForCurrentClustertype(manifest Manifest, clusterType string) bool {
 	for _, tag := range manifest.Tags {
 		if strings.HasPrefix(tag, clusterType+"-") {
 			return true
@@ -201,7 +204,7 @@ func isTaggedForType(manifest Manifest, clusterType string) bool {
 	return false
 }
 
-func isTagInCluster(manifest Manifest, image Image) bool {
+func tagIsReferencedInCluster(manifest Manifest, image Image) bool {
 	for _, tag := range manifest.Tags {
 		if image.Tag == tag {
 			return true
@@ -217,7 +220,7 @@ func listActiveImagesInCluster(radixClient radixclient.Interface) []Image {
 	rds, _ := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(metav1.ListOptions{})
 	for _, rd := range rds.Items {
 		for _, component := range rd.Spec.Components {
-			image := getImage(component.Image)
+			image := parseImage(component.Image)
 			if image == nil {
 				continue
 			}
@@ -229,7 +232,7 @@ func listActiveImagesInCluster(radixClient radixclient.Interface) []Image {
 	return images
 }
 
-func getImage(image string) *Image {
+func parseImage(image string) *Image {
 	imageRepository := strings.Split(image, "/")
 	if len(imageRepository) == 1 {
 		return nil
