@@ -11,6 +11,12 @@ echo ${PERIOD}
 echo ${REGISTRY}
 echo ${CLUSTER_TYPE}
 echo ${DELETE_UNTAGGED}
+echo ${DELETE_UNTAGGED}
 
 az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT}
-/radix-acr-cleanup/radix-acr-cleanup --period=${PERIOD} --registry=${REGISTRY} --clusterType=${CLUSTER_TYPE} --deleteUntagged=${DELETE_UNTAGGED}
+/radix-acr-cleanup/radix-acr-cleanup \
+  --period=${PERIOD} \
+  --registry=${REGISTRY} \
+  --clusterType=${CLUSTER_TYPE} \
+  --deleteUntagged=${DELETE_UNTAGGED} \
+  --performDelete=${PERFORM_DELETE}

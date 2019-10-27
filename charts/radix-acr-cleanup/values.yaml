@@ -1,6 +1,7 @@
 registry: radixdev
 clusterType: development
 deleteUntagged: false
+performDelete: false
 servicePrincipalSecret: radix-sp-acr-azure
 period: 60m
 

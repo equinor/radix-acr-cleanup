@@ -36,6 +36,8 @@ spec:
               value: {{ .Values.clusterType }}
             - name: DELETE_UNTAGGED
               value: {{ .Values.deleteUntagged | quote }}
+            - name: PERFORM_DELETE
+              value: {{ .Values.performDelete | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
