@@ -32,7 +32,7 @@ COPY --from=builder /usr/local/bin/radix-acr-cleanup /radix-acr-cleanup/radix-ac
 COPY --from=builder /go/src/github.com/equinor/radix-acr-cleanup/run_acr_cleanup.sh /radix-acr-cleanup/run_acr_cleanup.sh
 
 ENV TENANT=3aa4a235-b6e2-48d5-9195-7fcf05b459b0 \
-    AZURE_CREDENTIALS=/radix-acr-cleanup/azure/sp_credentials.json
+    AZURE_CREDENTIALS=/radix-acr-cleanup/.azure/sp_credentials.json
 
 EXPOSE 8080
 RUN chmod +x /radix-acr-cleanup/run_acr_cleanup.sh

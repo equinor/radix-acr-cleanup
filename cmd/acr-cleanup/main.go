@@ -79,13 +79,13 @@ func maintainImages(period time.Duration, registry, clusterType string, deleteUn
 
 	defer func() {
 		duration := time.Since(start)
-		println(fmt.Sprintf("It took %s to run", duration))
+		log.Infof("It took %s to run", duration)
 	}()
 
 	source := rand.NewSource(time.Now().UnixNano())
 	tick := delaytick.New(source, period)
 	for time := range tick {
-		println(fmt.Sprintf("Start deleting images %s", time))
+		log.Infof("Start deleting images %s", time)
 		deleteImagesBelongingTo(registry, clusterType, deleteUntagged)
 	}
 }
@@ -125,6 +125,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) 
 	processedRepositories := 0
 
 	for _, repository := range repositories {
+		log.Infof("Process repository %s", repository)
 		existInCluster, image := existInCluster(repository, images)
 
 		manifests := listManifests(registry, repository)
@@ -146,7 +147,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) 
 
 			if !existInCluster {
 				//deleteManifest(registry, repository, manifest.Digest)
-				println(fmt.Sprintf("Deleted digest %s for repository %s", manifest.Digest, repository))
+				log.Infof("Deleted digest %s for repository %s", manifest.Digest, repository)
 				addImageDeleted(clusterType)
 			}
 		}
@@ -154,7 +155,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) 
 		processedRepositories++
 
 		if (processedRepositories % 10) == 0 {
-			println(fmt.Sprintf("Processed %d out of %d repositories", processedRepositories, numRepositories))
+			log.Infof("Processed %d out of %d repositories", processedRepositories, numRepositories)
 		}
 	}
 }
