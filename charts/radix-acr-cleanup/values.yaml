@@ -1,12 +1,13 @@
 registry: radixdev
 clusterType: development
 deleteUntagged: false
+servicePrincipalSecret: radix-sp-acr-azure
 
 replicaCount: 1
 
 image:
-  repository: radix-acr-cleanup
-  tag: latest
+  repository: xx
+  tag: xx
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []

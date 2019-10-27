@@ -32,7 +32,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
-            - name: radix-sp-acr-azure
+            - name: {{ .Values.servicePrincipalSecret }}
               mountPath: /{{ .Chart.Name }}/.azure/sp_credentials.json
               readOnly: true
           ports:
@@ -61,3 +61,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      volumes:
+      - name: {{ .Values.servicePrincipalSecret }}
+        secret:
+          secretName: {{ .Values.servicePrincipalSecret }}
