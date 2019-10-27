@@ -2,13 +2,17 @@ registry: radixdev
 clusterType: development
 deleteUntagged: false
 servicePrincipalSecret: radix-sp-acr-azure
+period: 60m
+
+metrics:
+  enabled: false
 
 replicaCount: 1
 
 image:
   repository: xx
   tag: xx
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""

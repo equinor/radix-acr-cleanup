@@ -26,4 +26,6 @@ deploy-via-helm:
 	    ./charts/radix-acr-cleanup/ \
 		--set image.repository=$(DOCKER_REGISTRY)/radix-acr-cleanup \
 		--set image.tag=$(TAG) \
+		--set period=10s \
+		--set metrics.enabled=true \
 		--namespace default

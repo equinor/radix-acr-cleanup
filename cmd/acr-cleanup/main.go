@@ -28,6 +28,7 @@ import (
 )
 
 const clusterTypeLabel = "clusterType"
+const repositoryLabel = "repository"
 
 var (
 	clusterTypes    = [...]string{"development", "production", "playground"}
@@ -35,7 +36,7 @@ var (
 		prometheus.CounterOpts{
 			Name: "radix_acr_images_deleted",
 			Help: "The total number of image manifests deleted",
-		}, []string{clusterTypeLabel})
+		}, []string{clusterTypeLabel, repositoryLabel})
 )
 
 // Image Structure to hold image information
@@ -60,6 +61,7 @@ func main() {
 		registry       = fs.String("registry", "", "Name of the ACR registry (Required)")
 		clusterType    = fs.String("clusterType", "", "Type of cluster (Required)")
 		deleteUntagged = fs.Bool("deleteUntagged", false, "Solution can delete untagged images")
+		performDelete  = fs.Bool("performDelete", false, "Can control that the solution can actually delete manifest")
 	)
 
 	parseFlagsFromArgs(fs)
@@ -69,12 +71,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	go maintainImages(*period, *registry, *clusterType, *deleteUntagged)
+	log.Infof("Period: %s", *period)
+	log.Infof("Registry: %s", *registry)
+	log.Infof("Clustertype: %s", *clusterType)
+	log.Infof("Delete untagged: %t", *deleteUntagged)
+	log.Infof("Perform delete: %t", *performDelete)
+
+	go maintainImages(*period, *registry, *clusterType, *deleteUntagged, *performDelete)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func maintainImages(period time.Duration, registry, clusterType string, deleteUntagged bool) {
+func maintainImages(period time.Duration, registry, clusterType string, deleteUntagged, performDelete bool) {
 	start := time.Now()
 
 	defer func() {
@@ -86,7 +94,7 @@ func maintainImages(period time.Duration, registry, clusterType string, deleteUn
 	tick := delaytick.New(source, period)
 	for time := range tick {
 		log.Infof("Start deleting images %s", time)
-		deleteImagesBelongingTo(registry, clusterType, deleteUntagged)
+		deleteImagesBelongingTo(registry, clusterType, deleteUntagged, performDelete)
 	}
 }
 
@@ -115,7 +123,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) {
+func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, performDelete bool) {
 	_, radixClient := getKubernetesClient()
 
 	images := listActiveImagesInCluster(radixClient)
@@ -125,7 +133,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) 
 	processedRepositories := 0
 
 	for _, repository := range repositories {
-		log.Infof("Process repository %s", repository)
+		log.Debugf("Process repository %s", repository)
 		existInCluster, image := existInCluster(repository, images)
 
 		manifests := listManifests(registry, repository)
@@ -146,9 +154,12 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged bool) 
 			}
 
 			if !existInCluster {
-				//deleteManifest(registry, repository, manifest.Digest)
+				if performDelete {
+					deleteManifest(registry, repository, manifest.Digest)
+				}
+
 				log.Infof("Deleted digest %s for repository %s", manifest.Digest, repository)
-				addImageDeleted(clusterType)
+				addImageDeleted(clusterType, repository)
 			}
 		}
 
@@ -361,6 +372,6 @@ func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
 	return cmd
 }
 
-func addImageDeleted(clusterType string) {
-	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType}).Inc()
+func addImageDeleted(clusterType, repository string) {
+	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository}).Inc()
 }

@@ -12,6 +12,11 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
+    {{- if (.Values.metrics.enabled) }}
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+    {{- end }}
       labels:
         app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
@@ -23,6 +28,8 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           env:
+            - name: PERIOD
+              value: {{ .Values.period }}
             - name: REGISTRY
               value: {{ .Values.registry }}
             - name: CLUSTER_TYPE
@@ -33,20 +40,12 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: {{ .Values.servicePrincipalSecret }}
-              mountPath: /{{ .Chart.Name }}/.azure/sp_credentials.json
+              mountPath: /{{ .Chart.Name }}/.azure
               readOnly: true
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
