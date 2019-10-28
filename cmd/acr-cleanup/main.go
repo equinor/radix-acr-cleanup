@@ -284,14 +284,14 @@ func newListManifestsCommand(registry, repository string) *exec.Cmd {
 func deleteManifest(registry, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
 	if performDelete {
 		// Will perform an actual delete
-		deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
+		// deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
 
-		var outb bytes.Buffer
-		deleteCmd.Stdout = &outb
+		// var outb bytes.Buffer
+		// deleteCmd.Stdout = &outb
 
-		if err := deleteCmd.Run(); err != nil {
-			log.Errorf("Error deleting manifest: %v", err)
-		}
+		// if err := deleteCmd.Run(); err != nil {
+		// 	log.Errorf("Error deleting manifest: %v", err)
+		// }
 	}
 
 	// Will log a delete even if perform delete is false, so that
