@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,6 +17,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/delaytick"
+	"github.com/equinor/radix-acr-cleanup/pkg/image"
+	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
@@ -30,28 +31,11 @@ import (
 const clusterTypeLabel = "clusterType"
 const repositoryLabel = "repository"
 
-var (
-	clusterTypes    = [...]string{"development", "production", "playground"}
-	nrImagesDeleted = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "radix_acr_images_deleted",
-			Help: "The total number of image manifests deleted",
-		}, []string{clusterTypeLabel, repositoryLabel})
-)
-
-// Image Structure to hold image information
-type Image struct {
-	Registry   string
-	Repository string
-	Tag        string
-}
-
-// Manifest Structure to hold manifest information
-type Manifest struct {
-	Digest    string
-	Tags      []string
-	Timestamp string
-}
+var nrImagesDeleted = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "radix_acr_images_deleted",
+		Help: "The total number of image manifests deleted",
+	}, []string{clusterTypeLabel, repositoryLabel})
 
 func main() {
 	fs := initializeFlagSet()
@@ -138,12 +122,12 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
-			isNotTaggedForAnyClustertype := isNotTaggedForAnyClustertype(manifest)
+			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
 				continue
 			}
 
-			isTaggedForCurrentClustertype := isTaggedForCurrentClustertype(manifest, clusterType)
+			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
 			if !isTaggedForCurrentClustertype {
 				continue
 			}
@@ -174,37 +158,17 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 	}
 }
 
-func existInCluster(repository string, images []Image) (bool, Image) {
+func existInCluster(repository string, images []image.Data) (bool, image.Data) {
 	for _, image := range images {
 		if image.Repository == repository {
 			return true, image
 		}
 	}
 
-	return false, Image{}
+	return false, image.Data{}
 }
 
-func isNotTaggedForAnyClustertype(manifest Manifest) bool {
-	for _, clusterType := range clusterTypes {
-		if isTaggedForCurrentClustertype(manifest, clusterType) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func isTaggedForCurrentClustertype(manifest Manifest, clusterType string) bool {
-	for _, tag := range manifest.Tags {
-		if strings.HasPrefix(tag, clusterType+"-") {
-			return true
-		}
-	}
-
-	return false
-}
-
-func tagIsReferencedInCluster(manifest Manifest, image Image) bool {
+func tagIsReferencedInCluster(manifest manifest.Data, image image.Data) bool {
 	for _, tag := range manifest.Tags {
 		if image.Tag == tag {
 			return true
@@ -214,13 +178,13 @@ func tagIsReferencedInCluster(manifest Manifest, image Image) bool {
 	return false
 }
 
-func listActiveImagesInCluster(radixClient radixclient.Interface) []Image {
-	images := make([]Image, 0)
+func listActiveImagesInCluster(radixClient radixclient.Interface) []image.Data {
+	images := make([]image.Data, 0)
 
 	rds, _ := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(metav1.ListOptions{})
 	for _, rd := range rds.Items {
 		for _, component := range rd.Spec.Components {
-			image := parseImage(component.Image)
+			image := image.Parse(component.Image)
 			if image == nil {
 				continue
 			}
@@ -230,26 +194,6 @@ func listActiveImagesInCluster(radixClient radixclient.Interface) []Image {
 	}
 
 	return images
-}
-
-func parseImage(image string) *Image {
-	imageRepository := strings.Split(image, "/")
-	if len(imageRepository) == 1 {
-		return nil
-	}
-
-	repository := imageRepository[0]
-	imageTag := strings.Split(imageRepository[1], ":")
-
-	if len(imageTag) == 1 {
-		return nil
-	}
-
-	return &Image{
-		repository,
-		imageTag[0],
-		imageTag[1],
-	}
 }
 
 func getKubernetesClient() (kubernetes.Interface, radixclient.Interface) {
@@ -312,7 +256,7 @@ func getRepositoriesFromStringData(data string) []string {
 	return repositories
 }
 
-func listManifests(registry, repository string) []Manifest {
+func listManifests(registry, repository string) []manifest.Data {
 	listCmd := newListManifestsCommand(registry, repository)
 
 	var outb bytes.Buffer
@@ -322,7 +266,7 @@ func listManifests(registry, repository string) []Manifest {
 		log.Fatalf("Error listing manifests: %v", err)
 	}
 
-	return getManifestsFromStringData(outb.String())
+	return manifest.FromStringData(outb.String())
 }
 
 func newListManifestsCommand(registry, repository string) *exec.Cmd {
@@ -340,22 +284,13 @@ func newListManifestsCommand(registry, repository string) *exec.Cmd {
 	return cmd
 }
 
-func getManifestsFromStringData(data string) []Manifest {
-	maifests := make([]Manifest, 0)
-	err := yaml.Unmarshal([]byte(data), &maifests)
-	if err != nil {
-		return maifests
-	}
-	return maifests
-}
-
 func deleteManifest(registry, repository, digest string) {
-	listCmd := newDeleteManifestsCommand(registry, repository, digest)
+	deleteCmd := newDeleteManifestsCommand(registry, repository, digest)
 
 	var outb bytes.Buffer
-	listCmd.Stdout = &outb
+	deleteCmd.Stdout = &outb
 
-	if err := listCmd.Run(); err != nil {
+	if err := deleteCmd.Run(); err != nil {
 		log.Errorf("Error deleting manifest: %v", err)
 	}
 }
