@@ -30,12 +30,13 @@ import (
 
 const clusterTypeLabel = "clusterType"
 const repositoryLabel = "repository"
+const isTaggedLabel = "tagged"
 
 var nrImagesDeleted = promauto.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "radix_acr_images_deleted",
 		Help: "The total number of image manifests deleted",
-	}, []string{clusterTypeLabel, repositoryLabel})
+	}, []string{clusterTypeLabel, repositoryLabel, isTaggedLabel})
 
 func main() {
 	fs := initializeFlagSet()
@@ -125,6 +126,9 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
 				continue
+			} else if deleteUntagged && !existInCluster {
+				untagged := true
+				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			}
 
 			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
@@ -138,15 +142,8 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 			}
 
 			if !existInCluster {
-				if performDelete {
-					// Will perfor an actual delete
-					deleteManifest(registry, repository, manifest.Digest)
-				}
-
-				// Will log a delete even if perform delete is false, so that
-				// we can test the consequences of this utility
-				log.Infof("Deleted digest %s for repository %s", manifest.Digest, repository)
-				addImageDeleted(clusterType, repository)
+				untagged := false
+				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			}
 		}
 
@@ -284,15 +281,28 @@ func newListManifestsCommand(registry, repository string) *exec.Cmd {
 	return cmd
 }
 
-func deleteManifest(registry, repository, digest string) {
-	deleteCmd := newDeleteManifestsCommand(registry, repository, digest)
+func deleteManifest(registry, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
+	if performDelete {
+		// Will perform an actual delete
+		deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
 
-	var outb bytes.Buffer
-	deleteCmd.Stdout = &outb
+		var outb bytes.Buffer
+		deleteCmd.Stdout = &outb
 
-	if err := deleteCmd.Run(); err != nil {
-		log.Errorf("Error deleting manifest: %v", err)
+		if err := deleteCmd.Run(); err != nil {
+			log.Errorf("Error deleting manifest: %v", err)
+		}
 	}
+
+	// Will log a delete even if perform delete is false, so that
+	// we can test the consequences of this utility
+	log.Infof("Deleted digest %s for repository %s", manifest.Digest, repository)
+	if !untagged {
+		addImageDeleted(clusterType, repository)
+	} else {
+		addUntaggedImageDeleted(clusterType, repository)
+	}
+
 }
 
 func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
@@ -310,6 +320,10 @@ func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
 	return cmd
 }
 
+func addUntaggedImageDeleted(clusterType, repository string) {
+	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository, isTaggedLabel: "false"}).Inc()
+}
+
 func addImageDeleted(clusterType, repository string) {
-	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository}).Inc()
+	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository, isTaggedLabel: "true"}).Inc()
 }
