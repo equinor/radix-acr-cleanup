@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -111,7 +112,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 	_, radixClient := getKubernetesClient()
 
-	images := listActiveImagesInCluster(radixClient)
+	imagesInCluster := listActiveImagesInCluster(radixClient)
 	repositories := listRepositories(registry)
 
 	numRepositories := len(repositories)
@@ -119,14 +120,14 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 	for _, repository := range repositories {
 		log.Debugf("Process repository %s", repository)
-		existInCluster, image := existInCluster(repository, images)
-
 		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
+			manifestExistInCluster := manifestExistInCluster(repository, manifest, imagesInCluster)
+
 			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
 				continue
-			} else if deleteUntagged && !existInCluster {
+			} else if deleteUntagged && !manifestExistInCluster {
 				untagged := true
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			}
@@ -136,12 +137,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 				continue
 			}
 
-			tagIsReferencedInCluster := tagIsReferencedInCluster(manifest, image)
-			if tagIsReferencedInCluster {
-				continue
-			}
-
-			if !existInCluster {
+			if !manifestExistInCluster {
 				untagged := false
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			}
@@ -155,28 +151,23 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 	}
 }
 
-func existInCluster(repository string, images []image.Data) (bool, image.Data) {
-	for _, image := range images {
-		if image.Repository == repository {
-			return true, image
+func manifestExistInCluster(repository string, manifest manifest.Data, imagesInCluster []image.Data) bool {
+	manifestExistInCluster := false
+
+	for _, image := range imagesInCluster {
+		if strings.EqualFold(image.Repository, repository) {
+			if manifest.Contains(image.Tag) {
+				manifestExistInCluster = true
+				break
+			}
 		}
 	}
 
-	return false, image.Data{}
-}
-
-func tagIsReferencedInCluster(manifest manifest.Data, image image.Data) bool {
-	for _, tag := range manifest.Tags {
-		if image.Tag == tag {
-			return true
-		}
-	}
-
-	return false
+	return manifestExistInCluster
 }
 
 func listActiveImagesInCluster(radixClient radixclient.Interface) []image.Data {
-	images := make([]image.Data, 0)
+	imagesInCluster := make([]image.Data, 0)
 
 	rds, _ := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(metav1.ListOptions{})
 	for _, rd := range rds.Items {
@@ -186,11 +177,11 @@ func listActiveImagesInCluster(radixClient radixclient.Interface) []image.Data {
 				continue
 			}
 
-			images = append(images, *image)
+			imagesInCluster = append(imagesInCluster, *image)
 		}
 	}
 
-	return images
+	return imagesInCluster
 }
 
 func getKubernetesClient() (kubernetes.Interface, radixclient.Interface) {

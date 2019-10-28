@@ -47,3 +47,16 @@ func (manifest Data) IsNotTaggedForAnyClustertype() bool {
 
 	return true
 }
+
+// Contains Manifest contains image tag
+func (manifest Data) Contains(imageTag string) bool {
+	contains := false
+	for _, tag := range manifest.Tags {
+		if imageTag == tag {
+			contains = true
+			break
+		}
+	}
+
+	return contains
+}
