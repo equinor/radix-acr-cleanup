@@ -57,6 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Info("1.0.0")
 	log.Infof("Period: %s", *period)
 	log.Infof("Registry: %s", *registry)
 	log.Infof("Clustertype: %s", *clusterType)
