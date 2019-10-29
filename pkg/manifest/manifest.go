@@ -1,7 +1,9 @@
 package manifest
 
 import (
+	"sort"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -10,7 +12,7 @@ import (
 type Data struct {
 	Digest    string
 	Tags      []string
-	Timestamp string
+	Timestamp time.Time
 }
 
 // FromStringData Returns manifests from string data
@@ -20,6 +22,17 @@ func FromStringData(data string) []Data {
 	if err != nil {
 		return manifests
 	}
+
+	return manifests
+}
+
+// FromStringDataSorted Returns data sorted by timestamp asc
+func FromStringDataSorted(data string) []Data {
+	manifests := FromStringData(data)
+
+	sort.Slice(manifests, func(i, j int) bool {
+		return manifests[j].Timestamp.After(manifests[i].Timestamp)
+	})
 	return manifests
 }
 

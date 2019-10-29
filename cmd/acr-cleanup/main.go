@@ -127,6 +127,12 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 		log.Infof("Process repository %s", repository)
 		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
+			// If this manifest has a timestamp newer than start,
+			// the list of images might not be correct
+			if manifest.Timestamp.After(start) {
+				continue
+			}
+
 			manifestExistInCluster := manifestExistInCluster(repository, manifest, imagesInCluster)
 
 			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
@@ -269,7 +275,7 @@ func listManifests(registry, repository string) []manifest.Data {
 		log.Fatalf("Error listing manifests: %v", err)
 	}
 
-	return manifest.FromStringData(outb.String())
+	return manifest.FromStringDataSorted(outb.String())
 }
 
 func newListManifestsCommand(registry, repository string) *exec.Cmd {
