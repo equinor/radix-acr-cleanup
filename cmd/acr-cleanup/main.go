@@ -290,7 +290,7 @@ func deleteManifest(registry, repository, clusterType string, performDelete, unt
 
 	// Will log a delete even if perform delete is false, so that
 	// we can test the consequences of this utility
-	log.Infof("Deleted digest %s for repository %s", manifest.Digest, repository)
+	log.Infof("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
 	if !untagged {
 		addImageDeleted(clusterType, repository)
 	} else {
