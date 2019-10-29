@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("1.0.0")
+	log.Info("1.0.1")
 	log.Infof("Period: %s", *period)
 	log.Infof("Registry: %s", *registry)
 	log.Infof("Clustertype: %s", *clusterType)
@@ -115,7 +115,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 	imagesInCluster, err := listActiveImagesInCluster(radixClient)
 	if err != nil {
-		log.Fatal("Unable to list images in cluster. Cannot proceed")
+		log.Fatalf("Unable to list images in cluster, %v. Cannot proceed", err)
 	}
 
 	repositories := listRepositories(registry)
