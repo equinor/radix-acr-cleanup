@@ -120,21 +120,25 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 	processedRepositories := 0
 
 	for _, repository := range repositories {
-		log.Debugf("Process repository %s", repository)
+		log.Infof("Process repository %s", repository)
 		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
 			manifestExistInCluster := manifestExistInCluster(repository, manifest, imagesInCluster)
 
 			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
+				log.Infof("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			} else if deleteUntagged && !manifestExistInCluster {
+				log.Infof("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				untagged := true
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
+				continue
 			}
 
 			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
 			if !isTaggedForCurrentClustertype {
+				log.Infof("Manifest %s is tagged for different cluster type, %s, and should not be deleted", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			}
 
