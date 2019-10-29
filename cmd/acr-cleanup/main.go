@@ -140,6 +140,8 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 			if !manifestExistInCluster {
 				untagged := false
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
+			} else {
+				log.Infof("Manifest %s exists in cluster for tags %s", manifest.Digest, strings.Join(manifest.Tags, ","))
 			}
 		}
 
@@ -275,14 +277,14 @@ func newListManifestsCommand(registry, repository string) *exec.Cmd {
 func deleteManifest(registry, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
 	if performDelete {
 		// Will perform an actual delete
-		// deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
+		deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
 
-		// var outb bytes.Buffer
-		// deleteCmd.Stdout = &outb
+		var outb bytes.Buffer
+		deleteCmd.Stdout = &outb
 
-		// if err := deleteCmd.Run(); err != nil {
-		// 	log.Errorf("Error deleting manifest: %v", err)
-		// }
+		if err := deleteCmd.Run(); err != nil {
+			log.Errorf("Error deleting manifest: %v", err)
+		}
 	}
 
 	// Will log a delete even if perform delete is false, so that
