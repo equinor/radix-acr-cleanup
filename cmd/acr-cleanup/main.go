@@ -113,7 +113,11 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 	_, radixClient := getKubernetesClient()
 
-	imagesInCluster := listActiveImagesInCluster(radixClient)
+	imagesInCluster, err := listActiveImagesInCluster(radixClient)
+	if err != nil {
+		log.Fatal("Unable to list images in cluster. Cannot proceed")
+	}
+
 	repositories := listRepositories(registry)
 
 	numRepositories := len(repositories)
@@ -127,10 +131,10 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
-				log.Infof("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debugf("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			} else if deleteUntagged && !manifestExistInCluster {
-				log.Infof("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debugf("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				untagged := true
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 				continue
@@ -138,7 +142,7 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 
 			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
 			if !isTaggedForCurrentClustertype {
-				log.Infof("Manifest %s is tagged for different cluster type, %s, and should not be deleted", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debugf("Manifest %s is tagged for different cluster type, %s, and should not be deleted", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			}
 
@@ -173,10 +177,14 @@ func manifestExistInCluster(repository string, manifest manifest.Data, imagesInC
 	return manifestExistInCluster
 }
 
-func listActiveImagesInCluster(radixClient radixclient.Interface) []image.Data {
+func listActiveImagesInCluster(radixClient radixclient.Interface) ([]image.Data, error) {
 	imagesInCluster := make([]image.Data, 0)
 
-	rds, _ := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(metav1.ListOptions{})
+	rds, err := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		return imagesInCluster, err
+	}
+
 	for _, rd := range rds.Items {
 		for _, component := range rd.Spec.Components {
 			image := image.Parse(component.Image)
@@ -188,7 +196,7 @@ func listActiveImagesInCluster(radixClient radixclient.Interface) []image.Data {
 		}
 	}
 
-	return imagesInCluster
+	return imagesInCluster, nil
 }
 
 func getKubernetesClient() (kubernetes.Interface, radixclient.Interface) {
