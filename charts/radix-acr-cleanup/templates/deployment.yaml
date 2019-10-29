@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      serviceAccount: "{{ .Chart.Name }}"
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
