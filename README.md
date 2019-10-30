@@ -2,7 +2,21 @@
 
 ## Introduction
 
-radix-acr-cleanup will delete images no longer referenced in the cluster, tagged with the cluster type, or delete untagged images (not tagged with cluster type) no longer in the cluster if mandated, except for a list of whitelisted images
+radix-acr-cleanup will delete images no longer referenced in the cluster, tagged with the cluster type, or delete untagged images (not tagged with cluster type) no longer in the cluster if mandated, except for a list of whitelisted images. `radix-pipeline` will tag manifest with cluster type and cluster name. I.e. a manifest may look like this:
+
+```
+  {
+    "digest": "sha256:74e708055583f994e52f174b08f88a3b1d5cf4b69350499bf647a59876543210",
+    "tags": [
+      "ss5zv",
+      "production-ss5zv",
+      "prod-39-ss5zv"
+    ],
+    "timestamp": "2019-10-30T07:38:55.8812664Z"
+  }
+```
+
+Only a `production` type cluster should be able to delete this manifest. If the `production-*` and `prod-39*` tags where missing, then `production` cluster can only delete this if the `deleteUntagged` parameter has been set. Note that this can potentially create a problem for another cluster using the same registry.
 
 ## Installation
 
