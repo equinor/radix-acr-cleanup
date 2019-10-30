@@ -20,6 +20,7 @@ import (
 	"github.com/equinor/radix-acr-cleanup/pkg/delaytick"
 	"github.com/equinor/radix-acr-cleanup/pkg/image"
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
+	"github.com/equinor/radix-acr-cleanup/pkg/timewindow"
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
@@ -29,9 +30,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const clusterTypeLabel = "clusterType"
-const repositoryLabel = "repository"
-const isTaggedLabel = "tagged"
+const (
+	timezone         = "CET"
+	clusterTypeLabel = "clusterType"
+	repositoryLabel  = "repository"
+	isTaggedLabel    = "tagged"
+)
 
 var nrImagesDeleted = promauto.NewCounterVec(
 	prometheus.CounterOpts{
@@ -48,6 +52,9 @@ func main() {
 		clusterType    = fs.String("clusterType", "", "Type of cluster (Required)")
 		deleteUntagged = fs.Bool("deleteUntagged", false, "Solution can delete untagged images")
 		performDelete  = fs.Bool("performDelete", false, "Can control that the solution can actually delete manifest")
+		cleanupDays    = fs.StringSlice("rebootDays", timewindow.EveryDay, "Schedule cleanup on these days")
+		cleanupStart   = fs.String("cleanupStart", "0:00", "Start time")
+		cleanupEnd     = fs.String("cleanupEnd", "6:00", "End time")
 	)
 
 	parseFlagsFromArgs(fs)
@@ -57,24 +64,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("1.0.1")
+	log.Info("1.0.2")
+	log.Infof("Cleanup days: %s", *cleanupDays)
+	log.Infof("Cleanup start: %s", *cleanupStart)
+	log.Infof("Cleanup end: %s", *cleanupEnd)
 	log.Infof("Period: %s", *period)
 	log.Infof("Registry: %s", *registry)
 	log.Infof("Clustertype: %s", *clusterType)
 	log.Infof("Delete untagged: %t", *deleteUntagged)
 	log.Infof("Perform delete: %t", *performDelete)
 
-	go maintainImages(*period, *registry, *clusterType, *deleteUntagged, *performDelete)
+	go maintainImages(*cleanupDays, *cleanupStart, *cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *performDelete)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func maintainImages(period time.Duration, registry, clusterType string, deleteUntagged, performDelete bool) {
+func maintainImages(cleanupDays []string, cleanupStart string, cleanupEnd string, period time.Duration, registry, clusterType string, deleteUntagged, performDelete bool) {
+	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
+	if err != nil {
+		log.Fatalf("Failed to build time window: %v", err)
+	}
+
 	source := rand.NewSource(time.Now().UnixNano())
 	tick := delaytick.New(source, period)
 	for time := range tick {
-		log.Infof("Start deleting images %s", time)
-		deleteImagesBelongingTo(registry, clusterType, deleteUntagged, performDelete)
+		if window.Contains(time) {
+			log.Infof("Start deleting images %s", time)
+			deleteImagesBelongingTo(registry, clusterType, deleteUntagged, performDelete)
+		} else {
+			log.Infof("%s is outside of window. Continue sleeping", time)
+		}
 	}
 }
 
