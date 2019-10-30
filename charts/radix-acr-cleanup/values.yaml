@@ -5,7 +5,7 @@ clusterType: xx
 deleteUntagged: false
 performDelete: false
 period: 60m
-cleanupDays: "su mo tu we th fr sa"
+cleanupDays: "su,mo,tu,we,th,fr,sa"
 cleanupStart: "0:00"
 cleanupEnd: "6:00"
 

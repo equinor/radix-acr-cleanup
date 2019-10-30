@@ -15,7 +15,11 @@
                 "--period=10s",
                 "--registry=radixdev",
                 "--clusterType=development",
-                "--deleteUntagged=false"
+                "--deleteUntagged=false",
+                "--performDelete=false",
+                "--cleanupDays=su,mo,tu,we,th,fr,sa",
+                "--cleanupStart=0:00",
+                "--cleanupEnd=6:00"
             ]
         }
     ]
