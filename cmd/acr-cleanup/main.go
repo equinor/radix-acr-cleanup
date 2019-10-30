@@ -74,7 +74,7 @@ func main() {
 	log.Infof("Clustertype: %s", *clusterType)
 	log.Infof("Delete untagged: %t", *deleteUntagged)
 	log.Infof("Perform delete: %t", *performDelete)
-	log.Infof("Whitelisted: %t", *whitelisted)
+	log.Infof("Whitelisted: %s", *whitelisted)
 
 	go maintainImages(*cleanupDays, *cleanupStart,
 		*cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *performDelete, *whitelisted)
