@@ -150,7 +150,7 @@ func deleteImagesBelongingTo(registry, clusterType string,
 
 	for _, repository := range repositories {
 		if isWhitelisted(repository, whitelisted) {
-			log.Debugf("Skip repository %s, as it is whitelisted", repository)
+			log.Infof("Skip repository %s, as it is whitelisted", repository)
 			continue
 		}
 
