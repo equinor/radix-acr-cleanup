@@ -16,4 +16,5 @@ az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT}
   --performDelete=${PERFORM_DELETE} \
   --cleanupDays="${CLEANUP_DAYS}" \
   --cleanupStart="${CLEANUP_START}" \
-  --cleanupEnd="${CLEANUP_END}"
+  --cleanupEnd="${CLEANUP_END}" \
+  --whitelisted="${WHITELISTED}"

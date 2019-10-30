@@ -45,6 +45,8 @@ spec:
               value: {{ .Values.cleanupStart | quote }}
             - name: CLEANUP_END
               value: {{ .Values.cleanupEnd | quote }}
+            - name: WHITELISTED
+              value: {{ .Values.whitelisted | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:

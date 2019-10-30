@@ -23,4 +23,5 @@ Flags:
       --cleanupDays strings   Only cleanup on these days (default [su,mo,tu,we,th,fr,sa])
       --cleanupStart string   Only cleanup after this time of day (default "0:00")
       --cleanupEnd string     Only cleanup before this time of day (default "23:59")
+      --whitelisted strings   List of whitelisted repositories (i.e. radix-operator,radix-pipeline)
 ```

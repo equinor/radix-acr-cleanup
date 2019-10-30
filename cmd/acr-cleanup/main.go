@@ -55,6 +55,7 @@ func main() {
 		cleanupDays    = fs.StringSlice("cleanupDays", timewindow.EveryDay, "Schedule cleanup on these days")
 		cleanupStart   = fs.String("cleanupStart", "0:00", "Start time")
 		cleanupEnd     = fs.String("cleanupEnd", "6:00", "End time")
+		whitelisted    = fs.StringSlice("whitelisted", []string{}, "Lists repositories which are whitelisted")
 	)
 
 	parseFlagsFromArgs(fs)
@@ -73,13 +74,17 @@ func main() {
 	log.Infof("Clustertype: %s", *clusterType)
 	log.Infof("Delete untagged: %t", *deleteUntagged)
 	log.Infof("Perform delete: %t", *performDelete)
+	log.Infof("Whitelisted: %t", *whitelisted)
 
-	go maintainImages(*cleanupDays, *cleanupStart, *cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *performDelete)
+	go maintainImages(*cleanupDays, *cleanupStart,
+		*cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *performDelete, *whitelisted)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func maintainImages(cleanupDays []string, cleanupStart string, cleanupEnd string, period time.Duration, registry, clusterType string, deleteUntagged, performDelete bool) {
+func maintainImages(cleanupDays []string,
+	cleanupStart string, cleanupEnd string, period time.Duration,
+	registry, clusterType string, deleteUntagged, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 	if err != nil {
 		log.Fatalf("Failed to build time window: %v", err)
@@ -90,7 +95,7 @@ func maintainImages(cleanupDays []string, cleanupStart string, cleanupEnd string
 	for time := range tick {
 		if window.Contains(time) {
 			log.Infof("Start deleting images %s", time)
-			deleteImagesBelongingTo(registry, clusterType, deleteUntagged, performDelete)
+			deleteImagesBelongingTo(registry, clusterType, deleteUntagged, performDelete, whitelisted)
 		} else {
 			log.Infof("%s is outside of window. Continue sleeping", time)
 		}
@@ -122,7 +127,8 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, performDelete bool) {
+func deleteImagesBelongingTo(registry, clusterType string,
+	deleteUntagged, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
 	defer func() {
@@ -143,7 +149,12 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 	processedRepositories := 0
 
 	for _, repository := range repositories {
-		log.Infof("Process repository %s", repository)
+		if isWhitelisted(repository, whitelisted) {
+			log.Debugf("Skip repository %s, as it is whitelisted", repository)
+			continue
+		}
+
+		log.Debugf("Process repository %s", repository)
 		manifests := listManifests(registry, repository)
 		for _, manifest := range manifests {
 			// If this manifest has a timestamp newer than start,
@@ -185,6 +196,16 @@ func deleteImagesBelongingTo(registry, clusterType string, deleteUntagged, perfo
 			log.Debugf("Processed %d out of %d repositories", processedRepositories, numRepositories)
 		}
 	}
+}
+
+func isWhitelisted(repository string, whitelisted []string) bool {
+	for _, wlRepo := range whitelisted {
+		if strings.EqualFold(repository, wlRepo) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func manifestExistInCluster(repository string, manifest manifest.Data, imagesInCluster []image.Data) bool {
