@@ -1,5 +1,13 @@
 # radix-acr-cleanup
 
+## Introduction
+
+radix-acr-cleanup will delete images no longer referenced in the cluster, tagged with the cluster type, or delete untagged images (not tagged with cluster type) no longer in the cluster, except for a list of whitelisted images
+
+## Installation
+
+This can be installed to cluster manually using the ```make deploy-via-helm```, and will be deployed using flux https://github.com/equinor/radix-flux
+
 ## Configuration
 
 The following arguments can be passed to radix-acr-cleanup via the values of the Helm chart:
