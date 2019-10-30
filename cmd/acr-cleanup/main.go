@@ -52,7 +52,7 @@ func main() {
 		clusterType    = fs.String("clusterType", "", "Type of cluster (Required)")
 		deleteUntagged = fs.Bool("deleteUntagged", false, "Solution can delete untagged images")
 		performDelete  = fs.Bool("performDelete", false, "Can control that the solution can actually delete manifest")
-		cleanupDays    = fs.StringSlice("rebootDays", timewindow.EveryDay, "Schedule cleanup on these days")
+		cleanupDays    = fs.StringSlice("cleanupDays", timewindow.EveryDay, "Schedule cleanup on these days")
 		cleanupStart   = fs.String("cleanupStart", "0:00", "Start time")
 		cleanupEnd     = fs.String("cleanupEnd", "6:00", "End time")
 	)
