@@ -39,6 +39,12 @@ spec:
               value: {{ .Values.deleteUntagged | quote }}
             - name: PERFORM_DELETE
               value: {{ .Values.performDelete | quote }}
+            - name: CLEANUP_DAYS
+              value: {{ .Values.cleanupDays | quote }}
+            - name: CLEANUP_START
+              value: {{ .Values.cleanupStart | quote }}
+            - name: CLEANUP_END
+              value: {{ .Values.cleanupEnd | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:

@@ -1,12 +1,18 @@
 registry: xx
 clusterType: xx
+
+# Parameters to control behavior
 deleteUntagged: false
 performDelete: false
-servicePrincipalSecret: radix-sp-acr-azure
 period: 60m
+cleanupDays: "su mo tu we th fr sa"
+cleanupStart: "0:00"
+cleanupEnd: "6:00"
 
 metrics:
   enabled: false
+
+servicePrincipalSecret: radix-sp-acr-azure
 
 replicaCount: 1
 
