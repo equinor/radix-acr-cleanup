@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	timezone         = "CET"
+	timezone         = "Local"
 	clusterTypeLabel = "clusterType"
 	repositoryLabel  = "repository"
 	isTaggedLabel    = "tagged"
