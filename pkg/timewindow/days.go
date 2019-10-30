@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// EveryDay Constant to say that all days are valid
 var EveryDay = []string{"su", "mo", "tu", "we", "th", "fr", "sa"}
 
 // dayStrings maps day strings to time.Weekdays
@@ -80,14 +81,14 @@ func parseWeekday(day string) (time.Weekday, error) {
 	if n, err := strconv.Atoi(day); err == nil {
 		if n >= 0 && n < 7 {
 			return time.Weekday(n), nil
-		} else {
-			return time.Sunday, fmt.Errorf("Invalid weekday, number out of range: %s", day)
 		}
+
+		return time.Sunday, fmt.Errorf("Invalid weekday, number out of range: %s", day)
 	}
 
 	if weekday, ok := dayStrings[strings.ToLower(day)]; ok {
 		return weekday, nil
-	} else {
-		return time.Sunday, fmt.Errorf("Invalid weekday: %s", day)
 	}
+
+	return time.Sunday, fmt.Errorf("Invalid weekday: %s", day)
 }
