@@ -65,7 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("1.0.5")
+	log.Info("1.0.6")
 	log.Infof("Cleanup days: %s", *cleanupDays)
 	log.Infof("Cleanup start: %s", *cleanupStart)
 	log.Infof("Cleanup end: %s", *cleanupEnd)
@@ -186,7 +186,7 @@ func deleteImagesBelongingTo(registry, clusterType string,
 				untagged := false
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			} else {
-				log.Infof("Manifest %s exists in cluster for tags %s", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debugf("Manifest %s exists in cluster for tags %s", manifest.Digest, strings.Join(manifest.Tags, ","))
 			}
 		}
 
