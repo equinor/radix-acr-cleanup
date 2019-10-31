@@ -65,6 +65,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Info("1.0.5")
 	log.Infof("Cleanup days: %s", *cleanupDays)
 	log.Infof("Cleanup start: %s", *cleanupStart)
 	log.Infof("Cleanup end: %s", *cleanupEnd)
@@ -343,11 +344,14 @@ func deleteManifest(registry, repository, clusterType string, performDelete, unt
 		if err := deleteCmd.Run(); err != nil {
 			log.Errorf("Error deleting manifest: %v", err)
 		}
+
+		log.Infof("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
+	} else {
+		log.Infof("Digest %s for repository %s for tags %s would have been deleted", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
 	}
 
 	// Will log a delete even if perform delete is false, so that
 	// we can test the consequences of this utility
-	log.Infof("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
 	if !untagged {
 		addImageDeleted(clusterType, repository)
 	} else {
