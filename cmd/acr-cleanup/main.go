@@ -80,7 +80,7 @@ func main() {
 	log.Infof("Registry: %s", *registry)
 	log.Infof("Clustertype: %s", *clusterType)
 	log.Infof("Delete untagged: %t", *deleteUntagged)
-	log.Infof("Retain untagged: %t", *retainLatestUntagged)
+	log.Infof("Retain untagged: %d", *retainLatestUntagged)
 	log.Infof("Perform delete: %t", *performDelete)
 	log.Infof("Whitelisted: %s", *whitelisted)
 
