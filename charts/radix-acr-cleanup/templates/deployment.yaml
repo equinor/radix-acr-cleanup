@@ -37,6 +37,8 @@ spec:
               value: {{ .Values.clusterType }}
             - name: DELETE_UNTAGGED
               value: {{ .Values.deleteUntagged | quote }}
+            - name: RETAIN_LATEST_UNTAGGED
+              value: {{ .Values.retainLatestUntagged | quote }}
             - name: PERFORM_DELETE
               value: {{ .Values.performDelete | quote }}
             - name: CLEANUP_DAYS

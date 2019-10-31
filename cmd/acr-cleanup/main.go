@@ -43,19 +43,26 @@ var nrImagesDeleted = promauto.NewCounterVec(
 		Help: "The total number of image manifests deleted",
 	}, []string{clusterTypeLabel, repositoryLabel, isTaggedLabel})
 
+var nrImagesRetained = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "radix_acr_images_retained",
+		Help: "The total number of image manifests retained",
+	}, []string{clusterTypeLabel, repositoryLabel, isTaggedLabel})
+
 func main() {
 	fs := initializeFlagSet()
 
 	var (
-		period         = fs.Duration("period", time.Minute*60, "Interval between checks")
-		registry       = fs.String("registry", "", "Name of the ACR registry (Required)")
-		clusterType    = fs.String("clusterType", "", "Type of cluster (Required)")
-		deleteUntagged = fs.Bool("deleteUntagged", false, "Solution can delete untagged images")
-		performDelete  = fs.Bool("performDelete", false, "Can control that the solution can actually delete manifest")
-		cleanupDays    = fs.StringSlice("cleanupDays", timewindow.EveryDay, "Schedule cleanup on these days")
-		cleanupStart   = fs.String("cleanupStart", "0:00", "Start time")
-		cleanupEnd     = fs.String("cleanupEnd", "6:00", "End time")
-		whitelisted    = fs.StringSlice("whitelisted", []string{}, "Lists repositories which are whitelisted")
+		period               = fs.Duration("period", time.Minute*60, "Interval between checks")
+		registry             = fs.String("registry", "", "Name of the ACR registry (Required)")
+		clusterType          = fs.String("clusterType", "", "Type of cluster (Required)")
+		deleteUntagged       = fs.Bool("deleteUntagged", false, "Solution can delete untagged images")
+		retainLatestUntagged = fs.Int("retainLatestUntagged", 5, "Solution can retain x number of untagged images if set to delete")
+		performDelete        = fs.Bool("performDelete", false, "Can control that the solution can actually delete manifest")
+		cleanupDays          = fs.StringSlice("cleanupDays", timewindow.EveryDay, "Schedule cleanup on these days")
+		cleanupStart         = fs.String("cleanupStart", "0:00", "Start time")
+		cleanupEnd           = fs.String("cleanupEnd", "6:00", "End time")
+		whitelisted          = fs.StringSlice("whitelisted", []string{}, "Lists repositories which are whitelisted")
 	)
 
 	parseFlagsFromArgs(fs)
@@ -73,18 +80,20 @@ func main() {
 	log.Infof("Registry: %s", *registry)
 	log.Infof("Clustertype: %s", *clusterType)
 	log.Infof("Delete untagged: %t", *deleteUntagged)
+	log.Infof("Retain untagged: %t", *retainLatestUntagged)
 	log.Infof("Perform delete: %t", *performDelete)
 	log.Infof("Whitelisted: %s", *whitelisted)
 
 	go maintainImages(*cleanupDays, *cleanupStart,
-		*cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *performDelete, *whitelisted)
+		*cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func maintainImages(cleanupDays []string,
 	cleanupStart string, cleanupEnd string, period time.Duration,
-	registry, clusterType string, deleteUntagged, performDelete bool, whitelisted []string) {
+	registry, clusterType string, deleteUntagged bool,
+	retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 	if err != nil {
 		log.Fatalf("Failed to build time window: %v", err)
@@ -95,7 +104,7 @@ func maintainImages(cleanupDays []string,
 	for time := range tick {
 		if window.Contains(time) {
 			log.Infof("Start deleting images %s", time)
-			deleteImagesBelongingTo(registry, clusterType, deleteUntagged, performDelete, whitelisted)
+			deleteImagesBelongingTo(registry, clusterType, deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
 			log.Infof("%s is outside of window. Continue sleeping", time)
 		}
@@ -128,7 +137,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 }
 
 func deleteImagesBelongingTo(registry, clusterType string,
-	deleteUntagged, performDelete bool, whitelisted []string) {
+	deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
 	defer func() {
@@ -156,28 +165,45 @@ func deleteImagesBelongingTo(registry, clusterType string,
 
 		log.Debugf("Process repository %s", repository)
 		manifests := listManifests(registry, repository)
+		numManifests := len(manifests)
+
 		for _, manifest := range manifests {
+			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
+
 			// If this manifest has a timestamp newer than start,
 			// the list of images might not be correct
 			if manifest.Timestamp.After(start) {
+				if isNotTaggedForAnyClustertype {
+					addUntaggedImageRetained(clusterType, repository)
+				} else {
+					addImageRetained(clusterType, repository)
+				}
+
 				continue
 			}
 
 			manifestExistInCluster := manifestExistInCluster(repository, manifest, imagesInCluster)
-
-			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
+				addUntaggedImageRetained(clusterType, repository)
 				log.Debugf("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			} else if deleteUntagged && !manifestExistInCluster {
-				log.Debugf("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
-				untagged := true
-				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
+				if numManifests > retainLatestUntagged {
+					log.Debugf("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
+					untagged := true
+					deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
+					numManifests--
+				} else {
+					addUntaggedImageRetained(clusterType, repository)
+					log.Infof("Manifest %s is untagged, %s, and is mandated for deletion, but will be retained", manifest.Digest, strings.Join(manifest.Tags, ","))
+				}
+
 				continue
 			}
 
 			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
 			if !isTaggedForCurrentClustertype {
+				addImageRetained(clusterType, repository)
 				log.Debugf("Manifest %s is tagged for different cluster type, %s, and should not be deleted", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			}
@@ -186,6 +212,7 @@ func deleteImagesBelongingTo(registry, clusterType string,
 				untagged := false
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			} else {
+				addImageRetained(clusterType, repository)
 				log.Debugf("Manifest %s exists in cluster for tags %s", manifest.Digest, strings.Join(manifest.Tags, ","))
 			}
 		}
@@ -381,4 +408,12 @@ func addUntaggedImageDeleted(clusterType, repository string) {
 
 func addImageDeleted(clusterType, repository string) {
 	nrImagesDeleted.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository, isTaggedLabel: "true"}).Inc()
+}
+
+func addUntaggedImageRetained(clusterType, repository string) {
+	nrImagesRetained.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository, isTaggedLabel: "false"}).Inc()
+}
+
+func addImageRetained(clusterType, repository string) {
+	nrImagesRetained.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository, isTaggedLabel: "true"}).Inc()
 }
