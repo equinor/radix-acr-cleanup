@@ -65,7 +65,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("1.0.3")
 	log.Infof("Cleanup days: %s", *cleanupDays)
 	log.Infof("Cleanup start: %s", *cleanupStart)
 	log.Infof("Cleanup end: %s", *cleanupEnd)
