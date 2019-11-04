@@ -5,8 +5,8 @@ BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 HASH := $(shell git rev-parse HEAD)
 TAG := $(BRANCH)-$(HASH)
 
-CONTAINER_REPO ?= radix$(ENVIRONMENT)
 DOCKER_REGISTRY	?= $(CONTAINER_REPO).azurecr.io
+CONTAINER_REPO ?= radix$(ENVIRONMENT)
 
 build:
 	docker build -t radix-acr-cleanup .
