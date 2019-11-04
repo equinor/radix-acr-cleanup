@@ -16,7 +16,7 @@ radix-acr-cleanup will delete images no longer referenced in the cluster, tagged
   }
 ```
 
-Only a `production` type cluster should be able to delete this manifest. If the `production-*` and `prod-39*` tags where missing, then `production` cluster can only delete this if the `delete-untagged` parameter has been set. Note that this can potentially create a problem for another cluster using the same registry. Also, a non-active cluster will not perform any cleanup.
+Only a `production` type cluster should be able to delete this manifest. If the `production-*` and `prod-39*` tags were missing, then `production` cluster can only delete this if the `delete-untagged` parameter has been set. Note that this can potentially create a problem for another cluster using the same registry. Also, a non-active cluster will not perform any cleanup.
 
 ## Installation
 
