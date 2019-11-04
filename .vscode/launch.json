@@ -14,13 +14,14 @@
             "args": [
                 "--period=10s",
                 "--registry=radixdev",
-                "--clusterType=development",
-                "--deleteUntagged=false",
-                "--retainLatestUntagged=5",
-                "--performDelete=false",
-                "--cleanupDays=su,mo,tu,we,th,fr,sa",
-                "--cleanupStart=0:00",
-                "--cleanupEnd=6:00"
+                "--cluster-type=development",
+                "--delete-untagged=false",
+                "--retain-latest-untagged=5",
+                "--perform-delete=false",
+                "--cleanup-days=su,mo,tu,we,th,fr,sa",
+                "--cleanup-start=0:00",
+                "--cleanup-end=6:00",
+                "--whitelisted=radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-acr-cleanup,gitclone,radix-velero-plugin"
             ]
         }
     ]

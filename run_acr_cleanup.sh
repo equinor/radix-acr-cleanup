@@ -11,11 +11,11 @@ az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT}
 /radix-acr-cleanup/radix-acr-cleanup \
   --period=${PERIOD} \
   --registry=${REGISTRY} \
-  --clusterType=${CLUSTER_TYPE} \
-  --deleteUntagged=${DELETE_UNTAGGED} \
-  --retainLatestUntagged=${RETAIN_LATEST_UNTAGGED} \
-  --performDelete=${PERFORM_DELETE} \
-  --cleanupDays="${CLEANUP_DAYS}" \
-  --cleanupStart="${CLEANUP_START}" \
-  --cleanupEnd="${CLEANUP_END}" \
+  --cluster-type=${CLUSTER_TYPE} \
+  --delete-untagged=${DELETE_UNTAGGED} \
+  --retain-latest-untagged=${RETAIN_LATEST_UNTAGGED} \
+  --perform-delete=${PERFORM_DELETE} \
+  --cleanup-days="${CLEANUP_DAYS}" \
+  --cleanup-start="${CLEANUP_START}" \
+  --cleanup-end="${CLEANUP_END}" \
   --whitelisted="${WHITELISTED}"

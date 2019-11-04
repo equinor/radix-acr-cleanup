@@ -16,7 +16,7 @@ radix-acr-cleanup will delete images no longer referenced in the cluster, tagged
   }
 ```
 
-Only a `production` type cluster should be able to delete this manifest. If the `production-*` and `prod-39*` tags where missing, then `production` cluster can only delete this if the `deleteUntagged` parameter has been set. Note that this can potentially create a problem for another cluster using the same registry.
+Only a `production` type cluster should be able to delete this manifest. If the `production-*` and `prod-39*` tags where missing, then `production` cluster can only delete this if the `delete-untagged` parameter has been set. Note that this can potentially create a problem for another cluster using the same registry. Also, a non-active cluster will not perform any cleanup.
 
 ## Installation
 
@@ -29,15 +29,31 @@ The following arguments can be passed to radix-acr-cleanup via the values of the
 ```
 Flags:
       --registry string            The registry to perform cleanup of
-      --clusterType string         The type of cluster to check for tags of
-      --deleteUntagged bool        If true, the solution can be responsible for deleting untagged                                 images
-      --retainLatestUntagged int   Will ensure that x number of untagged manifests will be retained
-      --performDelete bool         If this is false, the solution won't perform an
+      --cluster-type string         The type of cluster to check for tags of
+      --delete-untagged bool        If true, the solution can be responsible for deleting untagged                                 images
+      --retain-latest-untagged int   Will ensure that x number of untagged manifests will be retained
+      --perform-delete bool         If this is false, the solution won't perform an
                                    actual delete, only log a delete for simulation purposes
       --period duration            Interval between checks (default 1h0m0s)
-      --cleanupDays strings        Only cleanup on these days (default [su,mo,tu,we,th,fr,sa])
-      --cleanupStart string        Only cleanup after this time of day (default "0:00")
-      --cleanupEnd string          Only cleanup before this time of day (default "23:59")
+      --cleanup-days strings        Only cleanup on these days (default [su,mo,tu,we,th,fr,sa])
+      --cleanup-start string        Only cleanup after this time of day (default "0:00")
+      --cleanup-end string          Only cleanup before this time of day (default "23:59")
       --whitelisted strings        List of whitelisted repositories (i.e. radix-operator,
                                    radix-pipeline)
 ```
+
+## Setting a schedule
+
+Use --cleanup-days, --cleanup-start, and --cleanup-end to set a schedule. time-zone will be the `Local` timezone for the cluster. For example, business hours can be specified with:
+
+	--cleanup-days mon,tue,wed,thu,fri
+	--cleanup-start 8am
+	--cleanup-end 4pm
+
+Times can be formatted in numerous ways, including 5pm, 5:00pm 17:00, and 17.
+
+Note that when using smaller time windows, you should consider shortening the check period (--period).
+
+## Prometheus Metrics
+
+The `radix-acr-cleanup` pod exposes metrics (:8080/metrics), `radix_acr_images_deleted` which tells the number of manifests deleted (or which would have been deleted if `perform-delete` set to `true`) and `radix_acr_images_retained` for the number of images not deleted from ACR.
