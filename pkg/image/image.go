@@ -24,8 +24,8 @@ func Parse(image string) *Data {
 	}
 
 	return &Data{
-		repository,
-		imageTag[0],
-		imageTag[1],
+		strings.TrimSpace(repository),
+		strings.TrimSpace(imageTag[0]),
+		strings.TrimSpace(imageTag[1]),
 	}
 }
