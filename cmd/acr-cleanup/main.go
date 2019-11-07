@@ -185,7 +185,7 @@ func deleteImagesBelongingTo(radixClient radixclient.Interface, registry, cluste
 				continue
 			}
 
-			manifestExistInCluster := manifestExistInCluster(repository, manifest, imagesInCluster)
+			manifestExistInCluster := doesManifestExistInCluster(repository, manifest, imagesInCluster)
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
 				addUntaggedImageRetained(clusterType, repository)
 				log.Debugf("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
@@ -274,7 +274,7 @@ func isActiveCluster(kubeClient kubernetes.Interface) bool {
 }
 
 // Checks if manifest exists in cluster
-func manifestExistInCluster(repository string, manifest manifest.Data, imagesInCluster []image.Data) bool {
+func doesManifestExistInCluster(repository string, manifest manifest.Data, imagesInCluster []image.Data) bool {
 	manifestExistInCluster := false
 
 	for _, image := range imagesInCluster {
