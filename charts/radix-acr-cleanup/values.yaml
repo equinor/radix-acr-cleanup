@@ -1,0 +1,41 @@
+registry: xx
+clusterType: xx
+
+# Parameters to control behavior
+deleteUntagged: false
+retainLatestUntagged: 5
+performDelete: false
+period: 60m
+cleanupDays: "su,mo,tu,we,th,fr,sa"
+cleanupStart: "0:00"
+cleanupEnd: "6:00"
+whitelisted: "radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-acr-cleanup,gitclone,radix-velero-plugin"
+
+metrics:
+  enabled: false
+
+servicePrincipalSecret: radix-sp-acr-azure
+
+replicaCount: 1
+
+image:
+  repository: xx
+  tag: xx
+  pullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+resources: 
+  limits:
+    memory: 300Mi
+  requests:
+    cpu: 100m
+    memory: 300Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

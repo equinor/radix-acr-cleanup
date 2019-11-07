@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "radix-acr-cleanup.fullname" . }}
+  labels:
+{{ include "radix-acr-cleanup.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+    {{- if (.Values.metrics.enabled) }}
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+    {{- end }}
+      labels:
+        app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccount: "{{ .Chart.Name }}"
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: PERIOD
+              value: {{ .Values.period }}
+            - name: REGISTRY
+              value: {{ .Values.registry }}
+            - name: CLUSTER_TYPE
+              value: {{ .Values.clusterType }}
+            - name: DELETE_UNTAGGED
+              value: {{ .Values.deleteUntagged | quote }}
+            - name: RETAIN_LATEST_UNTAGGED
+              value: {{ .Values.retainLatestUntagged | quote }}
+            - name: PERFORM_DELETE
+              value: {{ .Values.performDelete | quote }}
+            - name: CLEANUP_DAYS
+              value: {{ .Values.cleanupDays | quote }}
+            - name: CLEANUP_START
+              value: {{ .Values.cleanupStart | quote }}
+            - name: CLEANUP_END
+              value: {{ .Values.cleanupEnd | quote }}
+            - name: WHITELISTED
+              value: {{ .Values.whitelisted | quote }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: {{ .Values.servicePrincipalSecret }}
+              mountPath: /{{ .Chart.Name }}/.azure
+              readOnly: true
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      volumes:
+      - name: {{ .Values.servicePrincipalSecret }}
+        secret:
+          secretName: {{ .Values.servicePrincipalSecret }}
