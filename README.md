@@ -2,7 +2,7 @@
 
 ## Introduction
 
-radix-acr-cleanup will delete images no longer referenced in the cluster, tagged with the cluster type, or delete untagged images (not tagged with cluster type) no longer in the cluster if mandated, except for a list of whitelisted images. `radix-pipeline` will tag manifest with cluster type and cluster name. I.e. a manifest may look like this:
+`radix-acr-cleanup` will delete images no longer referenced in the cluster, tagged with the cluster type, or delete untagged images (not tagged with cluster type) no longer in the cluster if mandated, except for a list of whitelisted images. `radix-pipeline` will tag manifest with cluster type and cluster name. I.e. a manifest may look like this:
 
 ```
   {
@@ -21,6 +21,10 @@ Only a `production` type cluster should be able to delete this manifest. If the 
 ## Installation
 
 This can be installed to cluster manually using the ```make deploy-via-helm```, and will be deployed using flux https://github.com/equinor/radix-flux
+
+`radix-acr-cleanup` is built using [Azure Devops](https://dev.azure.com/omnia-radix/radix-operator/_build?definitionId=5), then deployed to cluster through a Helm release using the [Flux Operator](https://github.com/weaveworks/flux) whenever a new image is pushed to the container registry for the corresponding branch.
+
+[![Build Status](https://dev.azure.com/omnia-radix/radix-operator/_apis/build/status/equinor.radix-acr-cleanup?branchName=master)](https://dev.azure.com/omnia-radix/radix-operator/_build/latest?definitionId=5&branchName=master)
 
 ## Configuration
 
