@@ -57,3 +57,7 @@ Note that when using smaller time windows, you should consider shortening the ch
 ## Prometheus Metrics
 
 The `radix-acr-cleanup` pod exposes metrics (:8080/metrics), `radix_acr_images_deleted` which tells the number of manifests deleted (or which would have been deleted if `perform-delete` set to `true`) and `radix_acr_images_retained` for the number of images not deleted from ACR.
+
+## Developing
+
+You need Go installed. Make sure GOPATH and GOROOT are properly set up. Clone the repo into your GOPATH and run go mod download.
