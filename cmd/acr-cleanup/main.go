@@ -190,7 +190,7 @@ func deleteImagesBelongingTo(radixClient radixclient.Interface, registry, cluste
 				addUntaggedImageRetained(clusterType, repository)
 				log.Debugf("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
-			} else if deleteUntagged && !manifestExistInCluster {
+			} else if isNotTaggedForAnyClustertype && deleteUntagged && !manifestExistInCluster {
 				if numManifests > retainLatestUntagged {
 					log.Debugf("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 					untagged := true
