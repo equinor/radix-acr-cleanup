@@ -9,7 +9,7 @@ period: 60m
 cleanupDays: "su,mo,tu,we,th,fr,sa"
 cleanupStart: "0:00"
 cleanupEnd: "6:00"
-whitelisted: "radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-acr-cleanup,gitclone,radix-velero-plugin"
+whitelisted: "radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-acr-cleanup,gitclone,radix-velero-plugin,sima-runtime"
 
 metrics:
   enabled: false
