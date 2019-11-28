@@ -19,7 +19,7 @@ func ListRepositories(registry string) []string {
 	listCmd.Stdout = &outb
 
 	if err := listCmd.Run(); err != nil {
-		log.Fatalf("Error listing manifests: %v", err)
+		log.Fatalf("Error while listing manifests: %v", err)
 	}
 
 	return getRepositoriesFromStringData(outb.String())
@@ -33,7 +33,7 @@ func ListManifests(registry, repository string) []manifest.Data {
 	listCmd.Stdout = &outb
 
 	if err := listCmd.Run(); err != nil {
-		log.Fatalf("Error listing manifests: %v", err)
+		log.Fatalf("Error while listing manifests: %v", err)
 	}
 
 	return manifest.FromStringDataSorted(outb.String())
