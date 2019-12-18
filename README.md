@@ -20,11 +20,13 @@ Only a `production` type cluster should be able to delete this manifest. If the 
 
 ## Installation
 
-This can be installed to cluster manually using the ```make deploy-via-helm```, and will be deployed using flux https://github.com/equinor/radix-flux
+This can be installed to cluster manually using the `make deploy-via-helm`, and will be deployed using flux https://github.com/equinor/radix-flux
 
-`radix-acr-cleanup` is built using [Azure Devops](https://dev.azure.com/omnia-radix/radix-operator/_build?definitionId=5), then deployed to cluster through a Helm release using the [Flux Operator](https://github.com/weaveworks/flux) whenever a new image is pushed to the container registry for the corresponding branch.
+`radix-acr-cleanup` is built using Github actions, then deployed to cluster through a Helm release using the [Flux Operator](https://github.com/weaveworks/flux) whenever a new image is pushed to the container registry for the corresponding branch.
 
-[![Build Status](https://dev.azure.com/omnia-radix/radix-operator/_apis/build/status/equinor.radix-acr-cleanup?branchName=master)](https://dev.azure.com/omnia-radix/radix-operator/_build/latest?definitionId=5&branchName=master)
+There are [secrets](https://github.com/equinor/radix-acr-cleanup/settings/secrets) defined for the actions to be able to push to radixdev, radixprod and radixus. These are the corresponding credentials for radix-cr-cicd-dev and radix-cr-cicd-prod service accounts.
+
+[![Build Status](https://github.com/equinor/radix-acr-cleanup/workflows/radix-acr-cleanup-build/badge.svg)](https://github.com/equinor/radix-acr-cleanup/actions?query=workflow%3Aradix-acr-cleanup-build)
 
 ## Configuration
 
@@ -50,9 +52,9 @@ Flags:
 
 Use --cleanup-days, --cleanup-start, and --cleanup-end to set a schedule. time-zone will be the `Local` timezone for the cluster. For example, business hours can be specified with:
 
-	--cleanup-days mon,tue,wed,thu,fri
-	--cleanup-start 8am
-	--cleanup-end 4pm
+    --cleanup-days mon,tue,wed,thu,fri
+    --cleanup-start 8am
+    --cleanup-end 4pm
 
 Times can be formatted in numerous ways, including 5pm, 5:00pm 17:00, and 17.
 
