@@ -48,7 +48,7 @@ spec:
             - name: CLEANUP_END
               value: {{ .Values.cleanupEnd | quote }}
             - name: WHITELISTED
-              value: {{ .Values.whitelisted | quote }}
+              value: {{ include "helm-toolkit.utils.joinListWithComma" .Values.whitelisted | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
