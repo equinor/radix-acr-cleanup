@@ -85,21 +85,19 @@ func main() {
 
 	kubeClient, radixClient := getKubernetesClient()
 
-	if !isActiveCluster(kubeClient) {
-		log.Fatal("Current cluster is not active cluster, abort")
-	}
+	go maintainImages(kubeClient, radixClient, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
+		*registry, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
-	go maintainImages(radixClient, *cleanupDays, *cleanupStart,
-		*cleanupEnd, *period, *registry, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func maintainImages(radixClient radixclient.Interface, cleanupDays []string,
-	cleanupStart string, cleanupEnd string, period time.Duration,
+func maintainImages(kubeClient kubernetes.Interface, radixClient radixclient.Interface,
+	cleanupDays []string, cleanupStart string, cleanupEnd string, period time.Duration,
 	registry, clusterType string, deleteUntagged bool,
 	retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
+
 	if err != nil {
 		log.Fatalf("Failed to build time window: %v", err)
 	}
@@ -109,7 +107,8 @@ func maintainImages(radixClient radixclient.Interface, cleanupDays []string,
 	for time := range tick {
 		if window.Contains(time) {
 			log.Infof("Start deleting images %s", time)
-			deleteImagesBelongingTo(radixClient, registry, clusterType, deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
+			deleteImagesBelongingTo(kubeClient, radixClient, registry, clusterType,
+				deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
 			log.Infof("%s is outside of window. Continue sleeping", time)
 		}
@@ -141,7 +140,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(radixClient radixclient.Interface, registry, clusterType string,
+func deleteImagesBelongingTo(kubeClient kubernetes.Interface, radixClient radixclient.Interface, registry, clusterType string,
 	deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
@@ -149,6 +148,11 @@ func deleteImagesBelongingTo(radixClient radixclient.Interface, registry, cluste
 		duration := time.Since(start)
 		log.Infof("It took %s to run", duration)
 	}()
+
+	if !isActiveCluster(kubeClient) {
+		log.Error("Current cluster is not active cluster, abort")
+		return
+	}
 
 	imagesInCluster, err := listActiveImagesInCluster(radixClient)
 	if err != nil {
