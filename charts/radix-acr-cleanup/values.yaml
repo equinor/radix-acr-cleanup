@@ -23,6 +23,7 @@ whitelisted:
 - radix-velero-plugin
 - sima-runtime
 - radix-config-2-map
+- radix-cost-allocation
 
 metrics:
   enabled: false
