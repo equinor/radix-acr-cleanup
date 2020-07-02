@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
-          docker build . -t radixdev.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }} -t radixprod.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }} -t radixus.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }}
+          docker build . -t radixdev.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }} -t radixprod.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }} 
       - uses: azure/docker-login@v1
         with:
           login-server: radixdev.azurecr.io
@@ -29,11 +29,3 @@ jobs:
       - name: push to radixprod
         run: |
           docker push radixprod.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }}
-      - uses: azure/docker-login@v1
-        with:
-          login-server: radixus.azurecr.io
-          username: ${{ secrets.PROD_REGISTRY_USERNAME }}
-          password: ${{ secrets.PROD_REGISTRY_PASSWORD }}
-      - name: push to radixus
-        run: |
-          docker push radixus.azurecr.io/radix-acr-cleanup:${GITHUB_REF##*/}-${{ github.sha }}
