@@ -20,7 +20,7 @@ func FromStringData(data string) ([]Data, error) {
 	manifests := make([]Data, 0)
 	err := yaml.Unmarshal([]byte(data), &manifests)
 	if err != nil {
-		return manifests, err
+		return nil, err
 	}
 
 	return manifests, nil
