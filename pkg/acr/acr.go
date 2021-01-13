@@ -9,39 +9,58 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
+	"github.com/pkg/errors"
 )
 
+// ListRepositoriesError error
+func ListRepositoriesError(registry string, cause error) error {
+	return errors.WithMessagef(cause, "list repositories for registry %s failed", registry)
+}
+
+func ListManifestsError(repository string, cause error) error {
+	return errors.WithMessagef(cause, "list manifests for repository %s failed", repository)
+}
+
 // ListRepositories Is all available repositories in provided ACR registry
-func ListRepositories(registry string) []string {
+func ListRepositories(registry string) ([]string, error) {
 	listCmd := newListRepositoriesCommand(registry)
 
 	var outb bytes.Buffer
 	listCmd.Stdout = &outb
 
 	if err := listCmd.Run(); err != nil {
-		log.Fatalf("Error while listing manifests: %v", err)
+		return nil, ListRepositoriesError(registry, err)
 	}
 
-	return getRepositoriesFromStringData(outb.String())
+	repos, err := getRepositoriesFromStringData(outb.String())
+	if err != nil {
+		return nil, ListRepositoriesError(registry, err)
+	}
+
+	return repos, nil
 }
 
 // ListManifests Lists all available manifests for a single repository
-func ListManifests(registry, repository string) []manifest.Data {
+func ListManifests(registry, repository string) ([]manifest.Data, error) {
 	listCmd := newListManifestsCommand(registry, repository)
 
 	var outb bytes.Buffer
 	listCmd.Stdout = &outb
 
 	if err := listCmd.Run(); err != nil {
-		log.Fatalf("Error while listing manifests: %v", err)
+		return nil, ListManifestsError(repository, err)
 	}
 
-	return manifest.FromStringDataSorted(outb.String())
+	manifests, err := manifest.FromStringDataSorted(outb.String())
+	if err != nil {
+		return nil, ListManifestsError(repository, err)
+	}
+
+	return manifests, nil
 }
 
 // DeleteManifest Will delete a single manifest
 func DeleteManifest(registry, repository string, manifest manifest.Data) error {
-
 	// Will perform an actual delete
 	deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
 
@@ -64,13 +83,13 @@ func newListRepositoriesCommand(registry string) *exec.Cmd {
 	return cmd
 }
 
-func getRepositoriesFromStringData(data string) []string {
+func getRepositoriesFromStringData(data string) ([]string, error) {
 	repositories := make([]string, 0)
 	err := yaml.Unmarshal([]byte(data), &repositories)
 	if err != nil {
-		return repositories
+		return repositories, err
 	}
-	return repositories
+	return repositories, nil
 }
 
 func newListManifestsCommand(registry, repository string) *exec.Cmd {
