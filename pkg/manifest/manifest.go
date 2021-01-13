@@ -30,7 +30,7 @@ func FromStringData(data string) ([]Data, error) {
 func FromStringDataSorted(data string) ([]Data, error) {
 	manifests, err := FromStringData(data)
 	if err != nil {
-		return manifests, err
+		return nil, err
 	}
 
 	sort.Slice(manifests, func(i, j int) bool {

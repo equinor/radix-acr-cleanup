@@ -17,6 +17,7 @@ func ListRepositoriesError(registry string, cause error) error {
 	return errors.WithMessagef(cause, "list repositories for registry %s failed", registry)
 }
 
+// ListManifestsError error
 func ListManifestsError(repository string, cause error) error {
 	return errors.WithMessagef(cause, "list manifests for repository %s failed", repository)
 }
@@ -87,7 +88,7 @@ func getRepositoriesFromStringData(data string) ([]string, error) {
 	repositories := make([]string, 0)
 	err := yaml.Unmarshal([]byte(data), &repositories)
 	if err != nil {
-		return repositories, err
+		return nil, err
 	}
 	return repositories, nil
 }
