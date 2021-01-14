@@ -43,7 +43,8 @@ var testManifest = `
 `
 
 func TestFromStringData(t *testing.T) {
-	manifests := FromStringData(testManifest)
+	manifests, err := FromStringData(testManifest)
+	assert.NoError(t, err)
 	assert.Equal(t, 4, len(manifests))
 	assert.True(t, manifests[0].IsNotTaggedForAnyClustertype())
 	assert.False(t, manifests[1].IsNotTaggedForAnyClustertype())
@@ -55,7 +56,8 @@ func TestFromStringData(t *testing.T) {
 }
 
 func TestFromStringDataSorted(t *testing.T) {
-	manifests := FromStringDataSorted(testManifest)
+	manifests, err := FromStringDataSorted(testManifest)
+	assert.NoError(t, err)
 	assert.Equal(t, 4, len(manifests))
 	assert.Equal(t, "first", manifests[0].Tags[0])
 	assert.Equal(t, "second", manifests[1].Tags[0])
