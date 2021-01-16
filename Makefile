@@ -29,3 +29,6 @@ deploy-via-helm:
 		--set period=10s \
 		--set metrics.enabled=true \
 		--namespace default
+
+test:
+	go test -cover `go list ./...`		

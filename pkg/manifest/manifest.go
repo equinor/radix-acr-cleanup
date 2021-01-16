@@ -16,24 +16,27 @@ type Data struct {
 }
 
 // FromStringData Returns manifests from string data
-func FromStringData(data string) []Data {
+func FromStringData(data string) ([]Data, error) {
 	manifests := make([]Data, 0)
 	err := yaml.Unmarshal([]byte(data), &manifests)
 	if err != nil {
-		return manifests
+		return nil, err
 	}
 
-	return manifests
+	return manifests, nil
 }
 
 // FromStringDataSorted Returns data sorted by timestamp asc
-func FromStringDataSorted(data string) []Data {
-	manifests := FromStringData(data)
+func FromStringDataSorted(data string) ([]Data, error) {
+	manifests, err := FromStringData(data)
+	if err != nil {
+		return nil, err
+	}
 
 	sort.Slice(manifests, func(i, j int) bool {
 		return manifests[j].Timestamp.After(manifests[i].Timestamp)
 	})
-	return manifests
+	return manifests, nil
 }
 
 var clusterTypes = [...]string{"development", "production", "playground"}

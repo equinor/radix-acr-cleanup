@@ -49,6 +49,18 @@ var nrImagesRetained = promauto.NewCounterVec(
 		Help: "The total number of image manifests retained",
 	}, []string{clusterTypeLabel, repositoryLabel, isTaggedLabel})
 
+var nrImagesDeleteErrors = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "radix_acr_image_delete_errors",
+		Help: "The total number of image manifest delete errors",
+	}, []string{clusterTypeLabel, repositoryLabel})
+
+var nrListManifestErrors = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "radix_acr_list_manifest_errors",
+		Help: "The total number of manifest list request errors",
+	}, []string{clusterTypeLabel, repositoryLabel})
+
 func main() {
 	fs := initializeFlagSet()
 
@@ -156,14 +168,18 @@ func deleteImagesBelongingTo(kubeClient kubernetes.Interface, radixClient radixc
 
 	imagesInCluster, err := listActiveImagesInCluster(radixClient)
 	if err != nil {
-		log.Fatalf("Unable to list images in cluster, %v. Cannot proceed", err)
+		log.Errorf("Unable to list images in cluster, %v", err)
+		return
 	}
 
-	repositories := acr.ListRepositories(registry)
+	repositories, err := acr.ListRepositories(registry)
+	if err != nil {
+		log.Errorf("Unable to get repositories: %v", err)
+		return
+	}
 
 	numRepositories := len(repositories)
 	processedRepositories := 0
-
 	for _, repository := range repositories {
 		if isWhitelisted(repository, whitelisted) {
 			log.Infof("Skip repository %s, as it is whitelisted", repository)
@@ -171,7 +187,12 @@ func deleteImagesBelongingTo(kubeClient kubernetes.Interface, radixClient radixc
 		}
 
 		log.Debugf("Process repository %s", repository)
-		manifests := acr.ListManifests(registry, repository)
+		manifests, err := acr.ListManifests(registry, repository)
+		if err != nil {
+			log.Errorf("Unable to get manifests for repository %s: %v", repository, err)
+			addListManifestError(clusterType, repository)
+			continue
+		}
 		numManifests := len(manifests)
 
 		for _, manifest := range manifests {
@@ -236,9 +257,11 @@ func deleteManifest(registry, repository, clusterType string, performDelete, unt
 	if performDelete {
 		if err := acr.DeleteManifest(registry, repository, manifest); err != nil {
 			log.Errorf("Error deleting manifest: %v", err)
-		} else {
-			log.Infof("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
+			addImageDeleteError(clusterType, repository)
+			return
 		}
+
+		log.Infof("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
 
 	} else {
 		log.Infof("Digest %s for repository %s for tags %s would have been deleted", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
@@ -357,4 +380,12 @@ func addUntaggedImageRetained(clusterType, repository string) {
 
 func addImageRetained(clusterType, repository string) {
 	nrImagesRetained.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository, isTaggedLabel: "true"}).Inc()
+}
+
+func addImageDeleteError(clusterType, repository string) {
+	nrImagesDeleteErrors.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository}).Inc()
+}
+
+func addListManifestError(clusterType, repository string) {
+	nrListManifestErrors.With(prometheus.Labels{clusterTypeLabel: clusterType, repositoryLabel: repository}).Inc()
 }
