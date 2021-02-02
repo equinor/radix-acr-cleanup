@@ -117,7 +117,8 @@ func maintainImages(kubeClient kubernetes.Interface, radixClient radixclient.Int
 
 	source := rand.NewSource(time.Now().UnixNano())
 	tick := delaytick.New(source, period)
-	for time := range tick {
+	for range tick {
+		time := time.Now()
 		if window.Contains(time) {
 			log.Infof("Start deleting images %s", time)
 			deleteImagesBelongingTo(kubeClient, radixClient, registry, clusterType,
