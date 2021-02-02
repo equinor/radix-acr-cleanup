@@ -31,10 +31,11 @@ import (
 )
 
 const (
-	timezone         = "Local"
-	clusterTypeLabel = "clusterType"
-	repositoryLabel  = "repository"
-	isTaggedLabel    = "tagged"
+	timezone            = "Local"
+	clusterTypeLabel    = "clusterType"
+	repositoryLabel     = "repository"
+	isTaggedLabel       = "tagged"
+	manifestGracePeriod = 2 * time.Hour
 )
 
 var nrImagesDeleted = promauto.NewCounterVec(
@@ -200,7 +201,8 @@ func deleteImagesBelongingTo(kubeClient kubernetes.Interface, radixClient radixc
 
 			// If this manifest has a timestamp newer than start,
 			// the list of images might not be correct
-			if manifest.Timestamp.After(start) {
+			// The grace period will prevent images from being deleted if they are created before, but close to, the start time.
+			if isManifestWithinGracePeriod(manifest, start, manifestGracePeriod) {
 				if isNotTaggedForAnyClustertype {
 					addUntaggedImageRetained(clusterType, repository)
 				} else {
@@ -314,6 +316,12 @@ func doesManifestExistInCluster(repository string, manifest manifest.Data, image
 	}
 
 	return manifestExistInCluster
+}
+
+// Test if the manifest was created after a specified time and a grace period
+func isManifestWithinGracePeriod(manifest manifest.Data, time time.Time, gracePeriod time.Duration) bool {
+	createdWithGracePeriod := manifest.Timestamp.Add(gracePeriod)
+	return createdWithGracePeriod.After(time)
 }
 
 // Lists distinct images in cluster based on all RadixDeployments
