@@ -24,6 +24,7 @@ whitelisted:
 - sima-runtime
 - radix-config-2-map
 - radix-cost-allocation
+- radix-job-scheduler
 
 metrics:
   enabled: false
