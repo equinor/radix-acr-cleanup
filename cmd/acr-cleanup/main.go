@@ -343,6 +343,15 @@ func listActiveImagesInCluster(radixClient radixclient.Interface) ([]image.Data,
 
 			imagesInCluster = append(imagesInCluster, *image)
 		}
+
+		for _, job := range rd.Spec.Jobs {
+			image := image.Parse(job.Image)
+			if image == nil {
+				continue
+			}
+
+			imagesInCluster = append(imagesInCluster, *image)
+		}
 	}
 
 	return imagesInCluster, nil
