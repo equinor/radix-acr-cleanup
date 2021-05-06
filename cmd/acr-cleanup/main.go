@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -292,9 +293,12 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 
 // Checks for existence of active cluster ingresses to determine if this is the active cluster
 func isActiveCluster(kubeClient kubernetes.Interface) bool {
-	ingresses, err := kubeClient.ExtensionsV1beta1().Ingresses(corev1.NamespaceAll).List(metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", kube.RadixActiveClusterAliasLabel, strconv.FormatBool(true)),
-	})
+	ingresses, err := kubeClient.ExtensionsV1beta1().Ingresses(corev1.NamespaceAll).List(
+		context.Background(),
+		metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", kube.RadixActiveClusterAliasLabel, strconv.FormatBool(true)),
+		},
+	)
 
 	if err == nil && len(ingresses.Items) > 0 {
 		return true
@@ -329,7 +333,7 @@ func isManifestWithinGracePeriod(manifest manifest.Data, time time.Time, gracePe
 func listActiveImagesInCluster(radixClient radixclient.Interface) ([]image.Data, error) {
 	imagesInCluster := make([]image.Data, 0)
 
-	rds, err := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(metav1.ListOptions{})
+	rds, err := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return imagesInCluster, err
 	}
