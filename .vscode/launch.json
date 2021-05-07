@@ -21,7 +21,7 @@
                 "--cleanup-days=su,mo,tu,we,th,fr,sa",
                 "--cleanup-start=0:00",
                 "--cleanup-end=6:00",
-                "--whitelisted=radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-image-scanner,radix-acr-cleanup,gitclone,radix-velero-plugin,sima-runtime,radix-config-2-map,radix-cost-allocation"
+                "--whitelisted=radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-image-scanner,radix-acr-cleanup,gitclone,radix-velero-plugin,sima-runtime,radix-config-2-map,radix-cost-allocation,radix-job-scheduler"
             ]
         }
     ]
