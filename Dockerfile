@@ -44,5 +44,5 @@ ENV TENANT=3aa4a235-b6e2-48d5-9195-7fcf05b459b0 \
 EXPOSE 8080
 RUN chmod +x /radix-acr-cleanup/run_acr_cleanup.sh
 ENTRYPOINT [ "/radix-acr-cleanup/run_acr_cleanup.sh"]
-USER acr-cleanup
+USER 1000
 CMD ["-c"]
