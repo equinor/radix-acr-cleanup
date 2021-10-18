@@ -25,6 +25,7 @@ whitelisted:
 - radix-config-2-map
 - radix-cost-allocation
 - radix-job-scheduler
+- kubed
 
 metrics:
   enabled: false
