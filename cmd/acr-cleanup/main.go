@@ -293,7 +293,7 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 
 // Checks for existence of active cluster ingresses to determine if this is the active cluster
 func isActiveCluster(kubeClient kubernetes.Interface) bool {
-	ingresses, err := kubeClient.ExtensionsV1beta1().Ingresses(corev1.NamespaceAll).List(
+	ingresses, err := kubeClient.NetworkingV1().Ingresses(corev1.NamespaceAll).List(
 		context.Background(),
 		metav1.ListOptions{
 			LabelSelector: fmt.Sprintf("%s=%s", kube.RadixActiveClusterAliasLabel, strconv.FormatBool(true)),
