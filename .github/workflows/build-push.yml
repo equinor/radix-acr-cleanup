@@ -4,6 +4,8 @@ on:
     branches:
       - master
       - release
+permissions:
+  id-token: write
 jobs:
   build:
     name: Build-push
@@ -22,11 +24,6 @@ jobs:
       - name: build
         run: |
           docker build . -t radixdev.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }} -t radixprod.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }} 
-      # - uses: azure/docker-login@v1
-      #   with:
-      #     login-server: radixdev.azurecr.io
-      #     username: ${{ secrets.DEV_REGISTRY_USERNAME }}
-      #     password: ${{ secrets.DEV_REGISTRY_PASSWORD }}
       - uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID_DEV }}
@@ -38,11 +35,6 @@ jobs:
       - name: 'Push to radixdev'
         run: |
           docker push radixdev.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
-      # - uses: azure/docker-login@v1
-      #   with:
-      #     login-server: radixprod.azurecr.io
-      #     username: ${{ secrets.PROD_REGISTRY_USERNAME }}
-      #     password: ${{ secrets.PROD_REGISTRY_PASSWORD }}
       - uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID_PROD }}
