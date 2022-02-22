@@ -28,7 +28,7 @@ whitelisted:
 - kubed
 
 metrics:
-  enabled: false
+  enabled: true
   annotations: {}
 
 servicePrincipalSecret: radix-sp-acr-azure
