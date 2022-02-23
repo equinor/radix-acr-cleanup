@@ -29,6 +29,7 @@ whitelisted:
 
 metrics:
   enabled: false
+  annotations: {}
 
 servicePrincipalSecret: radix-sp-acr-azure
 
