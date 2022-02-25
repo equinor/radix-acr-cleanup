@@ -7,7 +7,12 @@ if [[ -z "${SP_SECRET}" ]]; then
   SP_SECRET=$(cat ${AZURE_CREDENTIALS} | jq -r '.password')
 fi
 
-az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT}
+# Exit script if az login is unsuccessful.
+# radix-acr-cleanup does not work when login is unsuccesful.
+# In some situation, e.g. when radix-acr-cleanup is scheduled to run on a newly created node,
+# the network is not ready and az login cannot connect to login.microsoftonline.com.
+az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT} || exit
+
 /radix-acr-cleanup/radix-acr-cleanup \
   --period=${PERIOD} \
   --registry=${REGISTRY} \
