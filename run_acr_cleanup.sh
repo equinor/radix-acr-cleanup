@@ -17,6 +17,7 @@ az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT} ||
   --period=${PERIOD} \
   --registry=${REGISTRY} \
   --cluster-type=${CLUSTER_TYPE} \
+  --active-cluster-name=${ACTIVE_CLUSTER_NAME} \
   --delete-untagged=${DELETE_UNTAGGED} \
   --retain-latest-untagged=${RETAIN_LATEST_UNTAGGED} \
   --perform-delete=${PERFORM_DELETE} \

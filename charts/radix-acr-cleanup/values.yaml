@@ -1,5 +1,6 @@
 registry: xx
 clusterType: xx
+activeClusterName: xx
 
 # Parameters to control behavior
 deleteUntagged: false
