@@ -51,3 +51,10 @@ Utility function to take list to comma separated string
 {{- $local := dict "first" true -}}
 {{- range $k, $v := . -}}{{- if not $local.first -}},{{- end -}}{{- $v -}}{{- $_ := set $local "first" false -}}{{- end -}}
 {{- end -}}
+
+{{/*
+Name of role and rolebinding granting access to radix-config configmap in default namespace
+*/}}
+{{- define "radix-acr-cleanup-rbac.radixconfig-role" -}}
+{{- print .Chart.Name "-radixconfig" -}}
+{{- end -}}
