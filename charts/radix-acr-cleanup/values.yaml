@@ -24,12 +24,12 @@ whitelisted:
 - sima-runtime
 - radix-config-2-map
 - radix-cost-allocation
-- radix-job-scheduler
-- radix-batch-scheduler
+- radix-job-scheduler-server
 - kubed
 
 metrics:
   enabled: false
+  annotations: {}
 
 servicePrincipalSecret: radix-sp-acr-azure
 
