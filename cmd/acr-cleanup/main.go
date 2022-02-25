@@ -22,10 +22,12 @@ import (
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
 	"github.com/equinor/radix-acr-cleanup/pkg/timewindow"
 	"github.com/equinor/radix-operator/pkg/apis/kube"
+	"github.com/equinor/radix-operator/pkg/apis/utils"
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -291,13 +293,19 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 	return false
 }
 
-// Checks for existence of active cluster ingresses to determine if this is the active cluster
+// Checks for existence of active cluster ingresses in prod environment for radix-api app to determine if this is the active cluster
 func isActiveCluster(kubeClient kubernetes.Interface) bool {
-	ingresses, err := kubeClient.NetworkingV1().Ingresses(corev1.NamespaceAll).List(
+	appName, envName := "radix-api", "prod"
+	ns := utils.GetEnvironmentNamespace(appName, envName)
+
+	selector := labels.Set{
+		kube.RadixActiveClusterAliasLabel: strconv.FormatBool(true),
+		kube.RadixAppLabel:                appName,
+	}
+
+	ingresses, err := kubeClient.NetworkingV1().Ingresses(ns).List(
 		context.Background(),
-		metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", kube.RadixActiveClusterAliasLabel, strconv.FormatBool(true)),
-		},
+		metav1.ListOptions{LabelSelector: selector.String()},
 	)
 
 	if err == nil && len(ingresses.Items) > 0 {
