@@ -1,4 +1,4 @@
-FROM golang:alpine3.11 as builder
+FROM golang:1.17.6-alpine3.15 as builder
 
 ENV GO111MODULE=on
 
@@ -25,7 +25,7 @@ RUN golint `go list ./cmd/...` && \
 # build
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-acr-cleanup ./cmd/acr-cleanup/.
 
-FROM mcr.microsoft.com/azure-cli:2.2.0
+FROM golang:1.17.6-alpine3.15
 
 ARG UID=1000
 ARG GID=1000
