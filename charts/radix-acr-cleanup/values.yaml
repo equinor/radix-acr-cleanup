@@ -34,8 +34,6 @@ metrics:
 
 servicePrincipalSecret: radix-sp-acr-azure
 
-replicaCount: 1
-
 image:
   repository: xx
   tag: xx
