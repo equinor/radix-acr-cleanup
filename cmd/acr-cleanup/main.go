@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -25,7 +23,6 @@ import (
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -70,6 +67,7 @@ func main() {
 		period               = fs.Duration("period", time.Minute*60, "Interval between checks")
 		registry             = fs.String("registry", "", "Name of the ACR registry (Required)")
 		clusterType          = fs.String("cluster-type", "", "Type of cluster (Required)")
+		activeClusterName    = fs.String("active-cluster-name", "", "Name of the active cluster (Required)")
 		deleteUntagged       = fs.Bool("delete-untagged", false, "Solution can delete untagged images")
 		retainLatestUntagged = fs.Int("retain-latest-untagged", 5, "Solution can retain x number of untagged images if set to delete")
 		performDelete        = fs.Bool("perform-delete", false, "Can control that the solution can actually delete manifest")
@@ -81,7 +79,11 @@ func main() {
 
 	parseFlagsFromArgs(fs)
 
-	if registry == nil || clusterType == nil {
+	stringIsNilOrEmpty := func(s *string) bool {
+		return s == nil || len(strings.TrimSpace(*s)) == 0
+	}
+
+	if stringIsNilOrEmpty(registry) || stringIsNilOrEmpty(clusterType) || stringIsNilOrEmpty(activeClusterName) {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -92,23 +94,28 @@ func main() {
 	log.Infof("Period: %s", *period)
 	log.Infof("Registry: %s", *registry)
 	log.Infof("Clustertype: %s", *clusterType)
+	log.Infof("Active cluster name: %s", *activeClusterName)
 	log.Infof("Delete untagged: %t", *deleteUntagged)
 	log.Infof("Retain untagged: %d", *retainLatestUntagged)
 	log.Infof("Perform delete: %t", *performDelete)
 	log.Infof("Whitelisted: %s", *whitelisted)
 
 	kubeClient, radixClient := getKubernetesClient()
+	kubeutil, err := kube.New(kubeClient, radixClient, nil)
+	if err != nil {
+		panic(err)
+	}
 
-	go maintainImages(kubeClient, radixClient, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
-		*registry, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
+	go maintainImages(kubeutil, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
+		*registry, *clusterType, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func maintainImages(kubeClient kubernetes.Interface, radixClient radixclient.Interface,
+func maintainImages(kubeutil *kube.Kube,
 	cleanupDays []string, cleanupStart string, cleanupEnd string, period time.Duration,
-	registry, clusterType string, deleteUntagged bool,
+	registry, clusterType, activeClusterName string, deleteUntagged bool,
 	retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 
@@ -122,7 +129,7 @@ func maintainImages(kubeClient kubernetes.Interface, radixClient radixclient.Int
 		time := time.Now()
 		if window.Contains(time) {
 			log.Infof("Start deleting images %s", time)
-			deleteImagesBelongingTo(kubeClient, radixClient, registry, clusterType,
+			deleteImagesBelongingTo(kubeutil, registry, clusterType, activeClusterName,
 				deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
 			log.Infof("%s is outside of window. Continue sleeping", time)
@@ -155,7 +162,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(kubeClient kubernetes.Interface, radixClient radixclient.Interface, registry, clusterType string,
+func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeClusterName string,
 	deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
@@ -164,12 +171,12 @@ func deleteImagesBelongingTo(kubeClient kubernetes.Interface, radixClient radixc
 		log.Infof("It took %s to run", duration)
 	}()
 
-	if !isActiveCluster(kubeClient) {
+	if !isActiveCluster(kubeutil, activeClusterName) {
 		log.Error("Current cluster is not active cluster, abort")
 		return
 	}
 
-	imagesInCluster, err := listActiveImagesInCluster(radixClient)
+	imagesInCluster, err := listActiveImagesInCluster(kubeutil)
 	if err != nil {
 		log.Errorf("Unable to list images in cluster, %v", err)
 		return
@@ -291,20 +298,13 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 	return false
 }
 
-// Checks for existence of active cluster ingresses to determine if this is the active cluster
-func isActiveCluster(kubeClient kubernetes.Interface) bool {
-	ingresses, err := kubeClient.NetworkingV1().Ingresses(corev1.NamespaceAll).List(
-		context.Background(),
-		metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", kube.RadixActiveClusterAliasLabel, strconv.FormatBool(true)),
-		},
-	)
-
-	if err == nil && len(ingresses.Items) > 0 {
-		return true
+// Checks for existence of active cluster ingresses in prod environment for radix-api app to determine if this is the active cluster
+func isActiveCluster(kubeutil *kube.Kube, activeClusterName string) bool {
+	currentClusterName, err := kubeutil.GetClusterName()
+	if err != nil {
+		panic(err)
 	}
-
-	return false
+	return strings.EqualFold(currentClusterName, activeClusterName)
 }
 
 // Checks if manifest exists in cluster
@@ -330,15 +330,15 @@ func isManifestWithinGracePeriod(manifest manifest.Data, time time.Time, gracePe
 }
 
 // Lists distinct images in cluster based on all RadixDeployments
-func listActiveImagesInCluster(radixClient radixclient.Interface) ([]image.Data, error) {
+func listActiveImagesInCluster(kubeutil *kube.Kube) ([]image.Data, error) {
 	imagesInCluster := make([]image.Data, 0)
 
-	rds, err := radixClient.RadixV1().RadixDeployments(corev1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	rds, err := kubeutil.ListRadixDeployments(corev1.NamespaceAll)
 	if err != nil {
 		return imagesInCluster, err
 	}
 
-	for _, rd := range rds.Items {
+	for _, rd := range rds {
 		for _, component := range rd.Spec.Components {
 			image := image.Parse(component.Image)
 			if image == nil {

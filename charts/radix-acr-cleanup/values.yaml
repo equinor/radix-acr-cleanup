@@ -1,5 +1,6 @@
 registry: xx
 clusterType: xx
+activeClusterName: xx
 
 # Parameters to control behavior
 deleteUntagged: false
@@ -33,8 +34,6 @@ metrics:
   annotations: {}
 
 servicePrincipalSecret: radix-sp-acr-azure
-
-replicaCount: 1
 
 image:
   repository: xx
