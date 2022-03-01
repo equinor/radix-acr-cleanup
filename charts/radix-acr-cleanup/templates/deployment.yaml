@@ -5,7 +5,9 @@ metadata:
   labels:
 {{ include "radix-acr-cleanup.labels" . | indent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
@@ -45,6 +47,8 @@ spec:
               value: {{ .Values.registry }}
             - name: CLUSTER_TYPE
               value: {{ .Values.clusterType }}
+            - name: ACTIVE_CLUSTER_NAME
+              value: {{ .Values.activeClusterName }}
             - name: DELETE_UNTAGGED
               value: {{ .Values.deleteUntagged | quote }}
             - name: RETAIN_LATEST_UNTAGGED
