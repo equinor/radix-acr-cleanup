@@ -27,6 +27,7 @@ whitelisted:
 - radix-cost-allocation
 - radix-job-scheduler-server
 - radix-batch-scheduler
+- radix-vulnerability-scanner
 - kubed
 
 metrics:
