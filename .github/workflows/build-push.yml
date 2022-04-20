@@ -11,6 +11,7 @@ jobs:
     name: Build-push to dev
     env:
       IMAGE: radix-acr-cleanup
+      CONTAINER_REGISTRIES: radixdev
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -23,7 +24,10 @@ jobs:
           echo "::set-output name=BUILD_ID::${branch}-${sha}-${ts}"
       - name: 'Build docker image'
         run: |
-          docker build . -t radixdev.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
+          for registry in `echo ${{ env.CONTAINER_REGISTRIES }} | tr ',' '\n'`
+          do
+            docker build . -t ${registry}.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
+          done
       - uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID_DEV }}
@@ -31,13 +35,17 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_DEV }}
       - name: 'Push to dev'
         run: |
-          az acr login --name radixdev
-          docker push radixdev.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
+          for registry in `echo ${{ env.CONTAINER_REGISTRIES }} | tr ',' '\n'`
+          do
+            az acr login --name ${registry}
+            docker push ${registry}.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
+          done
   build-deploy-image-prod:
     if: github.ref == 'refs/heads/release'
     name: Build-push to prod
     env:
       IMAGE: radix-acr-cleanup
+      CONTAINER_REGISTRIES: radixprod,radixc2prod
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -50,7 +58,10 @@ jobs:
           echo "::set-output name=BUILD_ID::${branch}-${sha}-${ts}"
       - name: 'Build docker image'
         run: |
-          docker build . -t radixprod.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }} 
+          for registry in `echo ${{ env.CONTAINER_REGISTRIES }} | tr ',' '\n'`
+          do
+            docker build . -t ${registry}.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }} 
+          done
       - uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID_PROD }}
@@ -58,5 +69,8 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID_PROD }}
       - name: 'Push to prod'
         run: |
-          az acr login --name radixprod
-          docker push radixprod.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
+          for registry in `echo ${{ env.CONTAINER_REGISTRIES }} | tr ',' '\n'`
+          do
+            az acr login --name ${registry}
+            docker push ${registry}.azurecr.io/${{ env.IMAGE }}:${{ steps.prep.outputs.BUILD_ID }}
+          done
