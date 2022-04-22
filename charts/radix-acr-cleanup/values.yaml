@@ -18,6 +18,7 @@ whitelisted:
 - radix-cicd-canary
 - radix-image-builder
 - radix-image-builderx
+- radix-image-tekton
 - radix-image-scanner
 - radix-acr-cleanup
 - gitclone
