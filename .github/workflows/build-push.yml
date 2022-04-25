@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - release
+      - 208384-multiple-acr
 permissions:
   id-token: write
 jobs:
