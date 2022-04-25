@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 branch=${GITHUB_REF##*/}
 sha=${GITHUB_SHA::8}
