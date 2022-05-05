@@ -45,6 +45,14 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{/*
+Selector labels
+*/}}
+{{- define "radix-acr-cleanup.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Utility function to take list to comma separated string
 */}}
 {{- define "helm-toolkit.utils.joinListWithComma" -}}

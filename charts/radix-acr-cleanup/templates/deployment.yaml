@@ -3,15 +3,14 @@ kind: Deployment
 metadata:
   name: {{ include "radix-acr-cleanup.fullname" . }}
   labels:
-{{ include "radix-acr-cleanup.labels" . | indent 4 }}
+    {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "radix-acr-cleanup.selectorLabels" . | nindent 6 }}
   template:
     metadata:
     {{- if (.Values.metrics.enabled) }}
@@ -23,8 +22,7 @@ spec:
         {{- end }}
     {{- end }}
       labels:
-        app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "radix-acr-cleanup.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccount: "{{ .Chart.Name }}"
     {{- with .Values.imagePullSecrets }}

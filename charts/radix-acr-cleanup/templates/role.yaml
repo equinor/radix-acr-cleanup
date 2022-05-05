@@ -3,10 +3,7 @@ kind: ClusterRole
 metadata:
   name: "{{ .Chart.Name }}"
   labels:
-    app: "{{ .Chart.Name }}"
-    chart: "{{ include "radix-acr-cleanup.chart" . }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - radix.equinor.com
@@ -20,10 +17,7 @@ kind: ClusterRoleBinding
 metadata:
   name: "{{ .Chart.Name }}"
   labels:
-    app: "{{ .Chart.Name }}"
-    chart: "{{ include "radix-acr-cleanup.chart" . }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -40,10 +34,7 @@ metadata:
   name: "{{ include "radix-acr-cleanup-rbac.radixconfig-role" . }}"
   namespace: default
   labels:
-    app: "{{ .Chart.Name }}"
-    chart: "{{ include "radix-acr-cleanup.chart" . }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - '*'
@@ -60,10 +51,7 @@ metadata:
   name: "{{ include "radix-acr-cleanup-rbac.radixconfig-role" . }}"
   namespace: default
   labels:
-    app: "{{ .Chart.Name }}"
-    chart: "{{ include "radix-acr-cleanup.chart" . }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
