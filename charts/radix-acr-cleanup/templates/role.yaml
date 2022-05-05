@@ -4,7 +4,7 @@ metadata:
   name: "{{ .Chart.Name }}"
   labels:
     app: "{{ .Chart.Name }}"
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ include "radix-acr-cleanup.chart" . }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 rules:
@@ -21,7 +21,7 @@ metadata:
   name: "{{ .Chart.Name }}"
   labels:
     app: "{{ .Chart.Name }}"
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ include "radix-acr-cleanup.chart" . }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 roleRef:
@@ -41,7 +41,7 @@ metadata:
   namespace: default
   labels:
     app: "{{ .Chart.Name }}"
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ include "radix-acr-cleanup.chart" . }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 rules:
@@ -61,7 +61,7 @@ metadata:
   namespace: default
   labels:
     app: "{{ .Chart.Name }}"
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    chart: "{{ include "radix-acr-cleanup.chart" . }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 roleRef:
