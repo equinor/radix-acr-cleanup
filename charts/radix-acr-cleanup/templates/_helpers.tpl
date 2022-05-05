@@ -35,9 +35,8 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "radix-acr-cleanup.labels" -}}
-app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
 helm.sh/chart: {{ include "radix-acr-cleanup.chart" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "radix-acr-cleanup.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
