@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: "{{ .Chart.Name }}"
+  name: {{ include "radix-acr-cleanup.fullname" . }}
   labels:
     {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 rules:
@@ -15,13 +15,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: "{{ .Chart.Name }}"
+  name: {{ include "radix-acr-cleanup.fullname" . }}
   labels:
     {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: "{{ .Chart.Name }}"
+  name: {{ include "radix-acr-cleanup.fullname" . }}
 subjects:
 - apiGroup: ""
   kind: ServiceAccount
@@ -32,7 +32,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: "{{ include "radix-acr-cleanup-rbac.radixconfig-role" . }}"
-  namespace: default
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 rules:
@@ -49,7 +49,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: "{{ include "radix-acr-cleanup-rbac.radixconfig-role" . }}"
-  namespace: default
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "radix-acr-cleanup.labels" . | nindent 4 }}
 roleRef:
