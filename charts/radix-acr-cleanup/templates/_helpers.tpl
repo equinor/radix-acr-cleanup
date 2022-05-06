@@ -52,6 +52,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Create the name of the service account to use
+*/}}
+{{- define "radix-acr-cleanup.serviceAccountName" -}}
+{{- default (include "radix-acr-cleanup.fullname" .) .Values.serviceAccount.name }}
+{{- end }}
+
+{{/*
 Utility function to take list to comma separated string
 */}}
 {{- define "helm-toolkit.utils.joinListWithComma" -}}

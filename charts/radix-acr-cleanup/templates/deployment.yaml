@@ -24,7 +24,7 @@ spec:
       labels:
         {{- include "radix-acr-cleanup.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccount: "{{ .Chart.Name }}"
+      serviceAccountName: {{ include "radix-acr-cleanup.serviceAccountName" . }}
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
