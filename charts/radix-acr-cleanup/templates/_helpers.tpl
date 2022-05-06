@@ -35,14 +35,28 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "radix-acr-cleanup.labels" -}}
-app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
 helm.sh/chart: {{ include "radix-acr-cleanup.chart" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "radix-acr-cleanup.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Selector labels
+*/}}
+{{- define "radix-acr-cleanup.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "radix-acr-cleanup.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "radix-acr-cleanup.serviceAccountName" -}}
+{{- default (include "radix-acr-cleanup.fullname" .) .Values.serviceAccount.name }}
+{{- end }}
 
 {{/*
 Utility function to take list to comma separated string
