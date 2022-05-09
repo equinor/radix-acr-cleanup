@@ -18,7 +18,7 @@ whitelisted:
 - radix-cicd-canary
 - radix-image-builder
 - radix-image-builderx
-- radix-image-tekton
+- radix-tekton
 - radix-image-scanner
 - radix-acr-cleanup
 - gitclone
@@ -36,6 +36,11 @@ metrics:
   annotations: {}
 
 servicePrincipalSecret: radix-sp-acr-azure
+
+serviceAccount:
+  # The name of the service account to use.
+  # If not set, a name is generated using the fullname template
+  name: ""
 
 image:
   repository: xx
