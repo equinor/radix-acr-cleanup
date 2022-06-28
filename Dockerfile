@@ -25,7 +25,7 @@ RUN golint `go list ./cmd/...` && \
 # build
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-acr-cleanup ./cmd/acr-cleanup/.
 
-FROM mcr.microsoft.com/azure-cli:2.9.1
+FROM mcr.microsoft.com/azure-cli:latest
 
 ARG UID=1000
 ARG GID=1000
