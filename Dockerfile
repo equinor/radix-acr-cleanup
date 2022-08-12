@@ -26,6 +26,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o 
 
 FROM mcr.microsoft.com/azure-cli:2.39.0
 
+# upgrade packages with vulnerabilities in mcr.microsoft.com/azure-cli:2.39.0
+# check if upgrades are necessary (snyk container test mcr.microsoft.com/azure-cli:<tag>) 
+# when updating to a new tag of mcr.microsoft.com/azure-cli
 RUN apk update && \
     apk add --upgrade libtirpc zlib
 
