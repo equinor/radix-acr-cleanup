@@ -30,7 +30,7 @@ FROM mcr.microsoft.com/azure-cli:2.39.0
 # check if upgrades are necessary (snyk container test mcr.microsoft.com/azure-cli:<tag>) 
 # when updating to a new tag of mcr.microsoft.com/azure-cli
 RUN apk update && \
-    apk add --upgrade libtirpc zlib
+    apk upgrade
 
 ARG UID=1000
 ARG GID=1000
