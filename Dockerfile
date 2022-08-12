@@ -1,11 +1,12 @@
-FROM golang:1.17-alpine as builder
+FROM golang:1.18.5-alpine3.16 as builder
 
 ENV GO111MODULE=on
 
 RUN apk update && \
     apk add ca-certificates  && \
-    apk add --no-cache gcc musl-dev && \
-    go get -u golang.org/x/lint/golint
+    apk add --no-cache gcc musl-dev
+
+RUN go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
 
 WORKDIR /go/src/github.com/equinor/radix-acr-cleanup/
 
@@ -15,17 +16,18 @@ RUN go mod download
 
 COPY . .
 # run tests and linting
-RUN golint `go list ./cmd/...` && \
-    golint `go list ./pkg/...` && \
-    go vet `go list ./cmd/...` && \
-    go vet `go list ./pkg/...` && \
-    CGO_ENABLED=0 GOOS=linux go test `go list ./cmd/...` && \
-    CGO_ENABLED=0 GOOS=linux go test `go list ./pkg/...` 
+RUN staticcheck ./... && \
+    go vet ./... && \
+    go test ./... && \
+    CGO_ENABLED=0 GOOS=linux go test ./...
 
 # build
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-acr-cleanup ./cmd/acr-cleanup/.
 
-FROM mcr.microsoft.com/azure-cli:2.9.1
+FROM mcr.microsoft.com/azure-cli:2.39.0
+
+RUN apk update && \
+    apk add --upgrade libtirpc zlib
 
 ARG UID=1000
 ARG GID=1000

@@ -15,14 +15,14 @@
                 "--period=10s",
                 "--registry=radixdev",
                 "--cluster-type=development",
-                "--active-cluster-name=weekly-08",
+                "--active-cluster-name=weekly-32",
                 "--delete-untagged=false",
                 "--retain-latest-untagged=5",
                 "--perform-delete=false",
                 "--cleanup-days=su,mo,tu,we,th,fr,sa",
                 "--cleanup-start=0:00",
-                "--cleanup-end=06:00",
-                "--whitelisted=radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-image-scanner,radix-acr-cleanup,gitclone,radix-velero-plugin,sima-runtime,radix-config-2-map,radix-cost-allocation,radix-job-scheduler-server"
+                "--cleanup-end=23:00",
+                "--whitelisted=radix-operator,radix-pipeline,rx,buildx,radix-cicd-canary,radix-image-builder,radix-image-builderx,radix-image-scanner,radix-acr-cleanup,gitclone,radix-velero-plugin,sima-runtime,radix-config-2-map,radix-cost-allocation,radix-job-scheduler-server,radix-vulnerability-scanner"
             ]
         }
     ]
