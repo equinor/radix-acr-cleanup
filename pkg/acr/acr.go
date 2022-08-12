@@ -6,7 +6,7 @@ import (
 	"os/exec"
 
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
 	"github.com/pkg/errors"
