@@ -1,4 +1,4 @@
-FROM golang:1.18.5-alpine3.16 as builder
+FROM golang:1.20-alpine3.18 as builder
 
 ENV GO111MODULE=on
 
@@ -6,7 +6,7 @@ RUN apk update && \
     apk add ca-certificates  && \
     apk add --no-cache gcc musl-dev
 
-RUN go install honnef.co/go/tools/cmd/staticcheck@v0.3.3
+RUN go install honnef.co/go/tools/cmd/staticcheck@2023.1.3
 
 WORKDIR /go/src/github.com/equinor/radix-acr-cleanup/
 
@@ -24,9 +24,9 @@ RUN staticcheck ./... && \
 # build
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -a -installsuffix cgo -o /usr/local/bin/radix-acr-cleanup ./cmd/acr-cleanup/.
 
-FROM mcr.microsoft.com/azure-cli:2.39.0
+FROM mcr.microsoft.com/azure-cli:2.50.0
 
-# upgrade packages with vulnerabilities in mcr.microsoft.com/azure-cli:2.39.0
+# upgrade packages with vulnerabilities in mcr.microsoft.com/azure-cli:2.50.0
 # check if upgrades are necessary (snyk container test mcr.microsoft.com/azure-cli:<tag>) 
 # when updating to a new tag of mcr.microsoft.com/azure-cli
 RUN apk update && \
