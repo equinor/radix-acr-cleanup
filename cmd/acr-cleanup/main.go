@@ -325,7 +325,7 @@ func doesManifestExistInCluster(repository string, manifest manifest.Data, image
 
 // Test if the manifest was created after a specified time and a grace period
 func isManifestWithinGracePeriod(manifest manifest.Data, time time.Time, gracePeriod time.Duration) bool {
-	createdWithGracePeriod := manifest.Timestamp.Add(gracePeriod)
+	createdWithGracePeriod := manifest.LastUpdateTime.Add(gracePeriod)
 	return createdWithGracePeriod.After(time)
 }
 
