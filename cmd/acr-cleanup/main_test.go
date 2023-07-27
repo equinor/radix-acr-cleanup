@@ -10,7 +10,7 @@ import (
 
 func Test_isManifestWithinGracePeriod(t *testing.T) {
 	created, _ := time.Parse(time.RFC3339, "2010-01-01T15:00:00Z")
-	manifest := manifest.Data{Timestamp: created}
+	manifest := manifest.Data{LastUpdateTime: created}
 
 	timeAfter, _ := time.Parse(time.RFC3339, "2010-01-01T16:00:00Z")
 	assert.True(t, isManifestWithinGracePeriod(manifest, timeAfter, 2*time.Hour))
