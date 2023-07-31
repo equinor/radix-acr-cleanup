@@ -52,7 +52,7 @@ func ListManifests(registry, repository string) ([]manifest.Data, error) {
 		return nil, ListManifestsError(repository, err)
 	}
 
-	manifests, err := manifest.FromStringDataSorted(outb.String())
+	manifests, err := manifest.FromDataSorted(outb.Bytes())
 	if err != nil {
 		return nil, ListManifestsError(repository, err)
 	}
@@ -94,9 +94,9 @@ func getRepositoriesFromStringData(data string) ([]string, error) {
 }
 
 func newListManifestsCommand(registry, repository string) *exec.Cmd {
-	args := []string{"acr", "repository", "show-manifests",
-		"--name", registry,
-		"--repository", repository,
+	args := []string{"acr", "manifest", "list-metadata",
+		"--registry", registry,
+		"--name", repository,
 		"--orderby", "time_asc"}
 
 	cmd := exec.Command("az", args...)

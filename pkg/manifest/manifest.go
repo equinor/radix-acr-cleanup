@@ -10,15 +10,15 @@ import (
 
 // Data Structure to hold manifest information
 type Data struct {
-	Digest    string
-	Tags      []string
-	Timestamp time.Time
+	Digest         string    `yaml:"digest"`
+	Tags           []string  `yaml:"tags"`
+	LastUpdateTime time.Time `yaml:"lastUpdateTime"`
 }
 
-// FromStringData Returns manifests from string data
-func FromStringData(data string) ([]Data, error) {
+// FromData Returns manifests from byte array
+func FromData(data []byte) ([]Data, error) {
 	manifests := make([]Data, 0)
-	err := yaml.Unmarshal([]byte(data), &manifests)
+	err := yaml.Unmarshal(data, &manifests)
 	if err != nil {
 		return nil, err
 	}
@@ -26,15 +26,15 @@ func FromStringData(data string) ([]Data, error) {
 	return manifests, nil
 }
 
-// FromStringDataSorted Returns data sorted by timestamp asc
-func FromStringDataSorted(data string) ([]Data, error) {
-	manifests, err := FromStringData(data)
+// FromDataSorted Returns data sorted by timestamp asc
+func FromDataSorted(data []byte) ([]Data, error) {
+	manifests, err := FromData(data)
 	if err != nil {
 		return nil, err
 	}
 
 	sort.Slice(manifests, func(i, j int) bool {
-		return manifests[j].Timestamp.After(manifests[i].Timestamp)
+		return manifests[j].LastUpdateTime.After(manifests[i].LastUpdateTime)
 	})
 	return manifests, nil
 }
