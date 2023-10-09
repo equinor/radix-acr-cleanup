@@ -67,3 +67,11 @@ The `radix-acr-cleanup` pod exposes metrics (:8080/metrics), `radix_acr_images_d
 ## Developing
 
 You need Go installed. Make sure GOPATH and GOROOT are properly set up. Clone the repo into your GOPATH and run go mod download
+
+## Contributing
+
+Read our [contribution guidelines](./CONTRIBUTING.md)
+
+-----------------
+
+[Security notification](./SECURITY.md)
