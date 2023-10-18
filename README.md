@@ -1,3 +1,5 @@
+![example workflow](https://github.com/equinor/radix-acr-cleanup/actions/workflows/build-push.yml/badge.svg)  
+
 # radix-acr-cleanup
 
 ## Introduction
