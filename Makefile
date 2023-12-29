@@ -31,4 +31,16 @@ deploy-via-helm:
 		--namespace default
 
 test:
-	go test -cover `go list ./...`		
+	go test -cover `go list ./...`
+
+lint: bootstrap
+	golangci-lint run --timeout=30m --max-same-issues=0
+
+
+
+HAS_GOLANGCI_LINT := $(shell command -v golangci-lint;)
+
+bootstrap:
+ifndef HAS_GOLANGCI_LINT
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+endif
