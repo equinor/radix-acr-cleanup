@@ -120,6 +120,7 @@ func main() {
 		*registry, *clusterType, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
+	log.Info().Msg("API is serving on port :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal().Err(err).Msg("Server exited unexpectedly")
 	}
