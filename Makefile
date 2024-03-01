@@ -34,7 +34,7 @@ test:
 	go test -cover `go list ./...`
 
 lint: bootstrap
-	golangci-lint run --timeout=30m --max-same-issues=0
+	golangci-lint run
 
 
 

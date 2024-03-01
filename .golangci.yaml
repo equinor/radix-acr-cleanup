@@ -1,0 +1,16 @@
+run:
+  timeout: 30m
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - zerologlint
+
+linters-settings:
+  issues:
+    max-same-issues: 0
