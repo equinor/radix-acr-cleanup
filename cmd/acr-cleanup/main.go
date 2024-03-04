@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -12,7 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/acr"
 	"github.com/equinor/radix-acr-cleanup/pkg/delaytick"
@@ -75,6 +78,8 @@ func main() {
 		cleanupStart         = fs.String("cleanup-start", "0:00", "Start time")
 		cleanupEnd           = fs.String("cleanup-end", "6:00", "End time")
 		whitelisted          = fs.StringSlice("whitelisted", []string{}, "Lists repositories which are whitelisted")
+		prettyPrint          = fs.Bool("pretty-print", false, "Use colored text instead of json for log output")
+		logLevel             = fs.String("log-level", "info", "Set log level for output, defaults to 'info', options: 'debug', 'info', 'warn', 'error'")
 	)
 
 	parseFlagsFromArgs(fs)
@@ -88,17 +93,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Infof("Cleanup days: %s", *cleanupDays)
-	log.Infof("Cleanup start: %s", *cleanupStart)
-	log.Infof("Cleanup end: %s", *cleanupEnd)
-	log.Infof("Period: %s", *period)
-	log.Infof("Registry: %s", *registry)
-	log.Infof("Clustertype: %s", *clusterType)
-	log.Infof("Active cluster name: %s", *activeClusterName)
-	log.Infof("Delete untagged: %t", *deleteUntagged)
-	log.Infof("Retain untagged: %d", *retainLatestUntagged)
-	log.Infof("Perform delete: %t", *performDelete)
-	log.Infof("Whitelisted: %s", *whitelisted)
+	_, err := initZerologger(context.Background(), *logLevel, *prettyPrint)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize Zerolog")
+	}
+
+	log.Info().Msgf("Cleanup days: %s", *cleanupDays)
+	log.Info().Msgf("Cleanup start: %s", *cleanupStart)
+	log.Info().Msgf("Cleanup end: %s", *cleanupEnd)
+	log.Info().Msgf("Period: %s", *period)
+	log.Info().Msgf("Registry: %s", *registry)
+	log.Info().Msgf("Clustertype: %s", *clusterType)
+	log.Info().Msgf("Active cluster name: %s", *activeClusterName)
+	log.Info().Msgf("Delete untagged: %t", *deleteUntagged)
+	log.Info().Msgf("Retain untagged: %d", *retainLatestUntagged)
+	log.Info().Msgf("Perform delete: %t", *performDelete)
+	log.Info().Msgf("Whitelisted: %s", *whitelisted)
 
 	kubeClient, radixClient := getKubernetesClient()
 	kubeutil, err := kube.New(kubeClient, radixClient, nil)
@@ -110,7 +120,28 @@ func main() {
 		*registry, *clusterType, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Info().Msg("API is serving on port :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal().Err(err).Msg("Server exited unexpectedly")
+	}
+}
+
+func initZerologger(ctx context.Context, logLevel string, prettyPrint bool) (context.Context, error) {
+	if logLevel == "" {
+		logLevel = "info"
+	}
+
+	zerologLevel, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		return nil, err
+	}
+	zerolog.SetGlobalLevel(zerologLevel)
+	zerolog.DurationFieldUnit = time.Millisecond
+	if prettyPrint {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
+	}
+	ctx = log.Logger.WithContext(ctx)
+	return ctx, nil
 }
 
 func maintainImages(kubeutil *kube.Kube,
@@ -120,7 +151,7 @@ func maintainImages(kubeutil *kube.Kube,
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 
 	if err != nil {
-		log.Fatalf("Failed to build time window: %v", err)
+		log.Fatal().Err(err).Msg("Failed to build time window")
 	}
 
 	source := rand.NewSource(time.Now().UnixNano())
@@ -128,11 +159,11 @@ func maintainImages(kubeutil *kube.Kube,
 	for range tick {
 		time := time.Now()
 		if window.Contains(time) {
-			log.Infof("Start deleting images %s", time)
+			log.Info().Msgf("Start deleting images %s", time)
 			deleteImagesBelongingTo(kubeutil, registry, clusterType, activeClusterName,
 				deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
-			log.Infof("%s is outside of window. Continue sleeping", time)
+			log.Info().Msgf("%s is outside of window. Continue sleeping", time)
 		}
 	}
 }
@@ -168,23 +199,23 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 
 	defer func() {
 		duration := time.Since(start)
-		log.Infof("It took %s to run", duration)
+		log.Info().Dur("ellapsed-ms", duration).Msgf("It took %s to run", duration)
 	}()
 
 	if !isActiveCluster(kubeutil, activeClusterName) {
-		log.Error("Current cluster is not active cluster, abort")
+		log.Error().Msg("Current cluster is not active cluster, abort")
 		return
 	}
 
 	imagesInCluster, err := listActiveImagesInCluster(kubeutil)
 	if err != nil {
-		log.Errorf("Unable to list images in cluster, %v", err)
+		log.Error().Err(err).Msg("Unable to list images in cluster")
 		return
 	}
 
 	repositories, err := acr.ListRepositories(registry)
 	if err != nil {
-		log.Errorf("Unable to get repositories: %v", err)
+		log.Error().Err(err).Msg("Unable to get repositories")
 		return
 	}
 
@@ -192,14 +223,14 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 	processedRepositories := 0
 	for _, repository := range repositories {
 		if isWhitelisted(repository, whitelisted) {
-			log.Infof("Skip repository %s, as it is whitelisted", repository)
+			log.Info().Str("repo", repository).Msg("Skip repository as it is whitelisted")
 			continue
 		}
 
-		log.Debugf("Process repository %s", repository)
+		log.Debug().Str("repo", repository).Msg("Process repository")
 		manifests, err := acr.ListManifests(registry, repository)
 		if err != nil {
-			log.Errorf("Unable to get manifests for repository %s: %v", repository, err)
+			log.Error().Str("repo", repository).Err(err).Msg("Unable to get manifests for repository")
 			addListManifestError(clusterType, repository)
 			continue
 		}
@@ -224,17 +255,17 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 			manifestExistInCluster := doesManifestExistInCluster(repository, manifest, imagesInCluster)
 			if isNotTaggedForAnyClustertype && !deleteUntagged {
 				addUntaggedImageRetained(clusterType, repository)
-				log.Debugf("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debug().Str("repo", repository).Msgf("Manifest %s is untagged, %s, and is not mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			} else if isNotTaggedForAnyClustertype && deleteUntagged && !manifestExistInCluster {
 				if numManifests > retainLatestUntagged {
-					log.Debugf("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
+					log.Debug().Str("repo", repository).Msgf("Manifest %s is untagged, %s, and is mandated for deletion", manifest.Digest, strings.Join(manifest.Tags, ","))
 					untagged := true
 					deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 					numManifests--
 				} else {
 					addUntaggedImageRetained(clusterType, repository)
-					log.Infof("Manifest %s is untagged, %s, and is mandated for deletion, but will be retained", manifest.Digest, strings.Join(manifest.Tags, ","))
+					log.Info().Str("repo", repository).Msgf("Manifest %s is untagged, %s, and is mandated for deletion, but will be retained", manifest.Digest, strings.Join(manifest.Tags, ","))
 				}
 
 				continue
@@ -243,7 +274,7 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
 			if !isTaggedForCurrentClustertype {
 				addImageRetained(clusterType, repository)
-				log.Debugf("Manifest %s is tagged for different cluster type, %s, and should not be deleted", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debug().Str("repo", repository).Msgf("Manifest %s is tagged for different cluster type, %s, and should not be deleted", manifest.Digest, strings.Join(manifest.Tags, ","))
 				continue
 			}
 
@@ -252,14 +283,14 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 				deleteManifest(registry, repository, clusterType, performDelete, untagged, manifest)
 			} else {
 				addImageRetained(clusterType, repository)
-				log.Debugf("Manifest %s exists in cluster for tags %s", manifest.Digest, strings.Join(manifest.Tags, ","))
+				log.Debug().Str("repo", repository).Msgf("Manifest %s exists in cluster for tags %s", manifest.Digest, strings.Join(manifest.Tags, ","))
 			}
 		}
 
 		processedRepositories++
 
 		if (processedRepositories % 10) == 0 {
-			log.Debugf("Processed %d out of %d repositories", processedRepositories, numRepositories)
+			log.Debug().Msgf("Processed %d out of %d repositories", processedRepositories, numRepositories)
 		}
 	}
 }
@@ -267,15 +298,15 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 func deleteManifest(registry, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
 	if performDelete {
 		if err := acr.DeleteManifest(registry, repository, manifest); err != nil {
-			log.Errorf("Error deleting manifest: %v", err)
+			log.Error().Err(err).Msg("Error deleting manifest")
 			addImageDeleteError(clusterType, repository)
 			return
 		}
 
-		log.Infof("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
+		log.Info().Str("repo", repository).Msgf("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
 
 	} else {
-		log.Infof("Digest %s for repository %s for tags %s would have been deleted", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
+		log.Info().Str("repo", repository).Msgf("Digest %s for repository %s for tags %s would have been deleted", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
 	}
 
 	// Will log a delete even if perform delete is false, so that
@@ -368,18 +399,18 @@ func getKubernetesClient() (kubernetes.Interface, radixclient.Interface) {
 	if err != nil {
 		config, err = rest.InClusterConfig()
 		if err != nil {
-			log.Fatalf("getClusterConfig InClusterConfig: %v", err)
+			log.Fatal().Err(err).Msg("getClusterConfig InClusterConfig")
 		}
 	}
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("getClusterConfig k8s client: %v", err)
+		log.Fatal().Err(err).Msg("getClusterConfig k8s client")
 	}
 
 	radixClient, err := radixclient.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("getClusterConfig radix client: %v", err)
+		log.Fatal().Err(err).Msg("getClusterConfig radix client")
 	}
 
 	log.Printf("Successfully constructed k8s client to API server %v", config.Host)
