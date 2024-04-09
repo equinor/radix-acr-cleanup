@@ -1,4 +1,4 @@
-![example workflow](https://github.com/equinor/radix-acr-cleanup/actions/workflows/build-push.yml/badge.svg)  
+[![Build Status](https://github.com/equinor/radix-acr-cleanup/workflows/radix-acr-cleanup-build/badge.svg)](https://github.com/equinor/radix-acr-cleanup/actions?query=workflow%3Aradix-acr-cleanup-build)
 
 # radix-acr-cleanup
 
@@ -24,11 +24,7 @@ Only a `production` type cluster should be able to delete this manifest. If the 
 
 This can be installed to cluster manually using the `make deploy-via-helm`, and will be deployed using flux https://github.com/equinor/radix-flux
 
-`radix-acr-cleanup` is built using Github actions, then deployed to cluster through a Helm release using the [Flux Operator](https://github.com/weaveworks/flux) whenever a new image is pushed to the container registry for the corresponding branch.
-
-There are [secrets](https://github.com/equinor/radix-acr-cleanup/settings/secrets) defined for the actions to be able to push to radixdev, radixprod and radixus. These are the corresponding credentials for radix-cr-cicd-dev and radix-cr-cicd-prod service accounts.
-
-[![Build Status](https://github.com/equinor/radix-acr-cleanup/workflows/radix-acr-cleanup-build/badge.svg)](https://github.com/equinor/radix-acr-cleanup/actions?query=workflow%3Aradix-acr-cleanup-build)
+`radix-acr-cleanup` is built using Github actions, then deployed to cluster through a Helm release using the [Flux Operator](https://github.com/weaveworks/flux) whenever a new image is pushed to the container registry for the corresponding branch. Build and Push to container registry is done using Github actions.
 
 ## Configuration
 
