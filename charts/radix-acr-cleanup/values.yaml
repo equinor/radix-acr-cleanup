@@ -41,6 +41,8 @@ serviceAccount:
   # The name of the service account to use.
   # If not set, a name is generated using the fullname template
   name: ""
+  # Annotations to add to the service account
+  annotations: {}
 
 image:
   repository: xx
@@ -64,3 +66,22 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  supplementalGroups:
+    - 1000
+
+securityContext:
+  privileged: false
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+
+# Additional volumes to add to the radix-acr-cleanup pod.
+extraVolumes: []
+
+# Additional volume mounts to add to the radix-acr-cleanup pod.
+extraVolumeMounts: []

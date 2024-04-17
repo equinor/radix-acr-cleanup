@@ -25,17 +25,14 @@ spec:
         {{- include "radix-acr-cleanup.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "radix-acr-cleanup.serviceAccountName" . }}
-    {{- with .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-    {{- end }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        supplementalGroups:
-          - 1000
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           env:
@@ -67,16 +64,19 @@ spec:
             - name: {{ .Values.servicePrincipalSecret }}
               mountPath: /{{ .Chart.Name }}/.azure
               readOnly: true
+            {{- with .Values.extraVolumeMounts }}
+                {{- toYaml . | nindent 12 }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.securityContext }}
           securityContext:
-            privileged: false
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -90,6 +90,9 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       volumes:
-      - name: {{ .Values.servicePrincipalSecret }}
-        secret:
-          secretName: {{ .Values.servicePrincipalSecret }}
+        - name: {{ .Values.servicePrincipalSecret }}
+          secret:
+            secretName: {{ .Values.servicePrincipalSecret }}
+        {{- with .Values.extraVolumes }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
