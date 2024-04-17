@@ -5,21 +5,22 @@ import (
 	"fmt"
 	"os/exec"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/equinor/radix-acr-cleanup/pkg/logwriter"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
-	"github.com/pkg/errors"
 )
 
 // ListRepositoriesError error
 func ListRepositoriesError(registry string, cause error) error {
-	return errors.WithMessagef(cause, "list repositories for registry %s failed", registry)
+	return fmt.Errorf("list repositories for registry %s failed: %w", registry, cause)
 }
 
 // ListManifestsError error
 func ListManifestsError(repository string, cause error) error {
-	return errors.WithMessagef(cause, "list manifests for repository %s failed", repository)
+	return fmt.Errorf("list manifests for repository %s failed: %w", repository, cause)
 }
 
 // ListRepositories Is all available repositories in provided ACR registry
@@ -76,10 +77,12 @@ func newListRepositoriesCommand(registry string) *exec.Cmd {
 		"--name", registry}
 
 	cmd := exec.Command("az", args...)
-	cmd.Stderr = log.NewEntry(log.StandardLogger()).
-		WithField("cmd", cmd.Args[0]).
-		WithField("std", "err").
-		WriterLevel(log.WarnLevel)
+	logger := log.With().
+		Str("cmd", cmd.Args[0]).
+		Str("std", "err").
+		Logger()
+
+	cmd.Stderr = logwriter.New(&logger, zerolog.WarnLevel)
 
 	return cmd
 }
@@ -100,10 +103,12 @@ func newListManifestsCommand(registry, repository string) *exec.Cmd {
 		"--orderby", "time_asc"}
 
 	cmd := exec.Command("az", args...)
-	cmd.Stderr = log.NewEntry(log.StandardLogger()).
-		WithField("cmd", cmd.Args[0]).
-		WithField("std", "err").
-		WriterLevel(log.WarnLevel)
+	logger := log.With().
+		Str("cmd", cmd.Args[0]).
+		Str("std", "err").
+		Logger()
+
+	cmd.Stderr = logwriter.New(&logger, zerolog.WarnLevel)
 
 	return cmd
 }
@@ -115,10 +120,12 @@ func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
 		"--yes"}
 
 	cmd := exec.Command("az", args...)
-	cmd.Stderr = log.NewEntry(log.StandardLogger()).
-		WithField("cmd", cmd.Args[0]).
-		WithField("std", "err").
-		WriterLevel(log.WarnLevel)
+	logger := log.With().
+		Str("cmd", cmd.Args[0]).
+		Str("std", "err").
+		Logger()
+
+	cmd.Stderr = logwriter.New(&logger, zerolog.WarnLevel)
 
 	return cmd
 }
