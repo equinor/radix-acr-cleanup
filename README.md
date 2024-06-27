@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/equinor/radix-acr-cleanup/workflows/radix-acr-cleanup-build/badge.svg)](https://github.com/equinor/radix-acr-cleanup/actions?query=workflow%3Aradix-acr-cleanup-build)
+[![SCM Compliance](https://scm-compliance-api.radix.equinor.com/repos/equinor/8de2870b-4681-4c54-8f5e-2cb7a85f3201/badge)](https://developer.equinor.com/governance/scm-policy/)
 
 # radix-acr-cleanup
 
