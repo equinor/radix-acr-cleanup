@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.22.5
 
 require (
-	github.com/equinor/radix-common v1.9.3-0.20240715143046-76177e6e0163
+	github.com/equinor/radix-common v1.9.3
 	github.com/equinor/radix-operator v1.57.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/rs/zerolog v1.33.0
@@ -13,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.30.2
-	k8s.io/client-go v0.30.1
+	k8s.io/client-go v0.30.2
 )
 
 require (

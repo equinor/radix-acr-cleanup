@@ -13,8 +13,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/emicklei/go-restful/v3 v3.11.2 h1:1onLa9DcsMYO9P+CXaL0dStDqQ2EHHXLiz+BtnqkLAU=
 github.com/emicklei/go-restful/v3 v3.11.2/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
-github.com/equinor/radix-common v1.9.3-0.20240715143046-76177e6e0163 h1:Vt7uP63s/DQfirOMJwnteDA2fz2wGbkzKVeeBTaztrM=
-github.com/equinor/radix-common v1.9.3-0.20240715143046-76177e6e0163/go.mod h1:+g0Wj0D40zz29DjNkYKVmCVeYy4OsFWKI7Qi9rA6kpY=
+github.com/equinor/radix-common v1.9.3 h1:dLKFzYy8/XyEG9Zygi0rMWIYGCddai/ILwUqjBiGYxQ=
+github.com/equinor/radix-common v1.9.3/go.mod h1:+g0Wj0D40zz29DjNkYKVmCVeYy4OsFWKI7Qi9rA6kpY=
 github.com/equinor/radix-operator v1.57.1 h1:5nhKdF13MZ9oooxr5+n3OOXMUrr7g1U9GGSeKysfcq0=
 github.com/equinor/radix-operator v1.57.1/go.mod h1:zCdAiP/wxyvlUO4qGoJuLW3O+ZSt9kTyHMnjmsR3fCU=
 github.com/evanphx/json-patch v5.8.1+incompatible h1:2toJaoe7/rNa1zpeQx0UnVEjqk6z2ecyA20V/zg8vTU=
@@ -207,8 +207,8 @@ k8s.io/apiextensions-apiserver v0.30.1 h1:4fAJZ9985BmpJG6PkoxVRpXv9vmPUOVzl614xa
 k8s.io/apiextensions-apiserver v0.30.1/go.mod h1:R4GuSrlhgq43oRY9sF2IToFh7PVlF1JjfWdoG3pixk4=
 k8s.io/apimachinery v0.30.2 h1:fEMcnBj6qkzzPGSVsAZtQThU62SmQ4ZymlXRC5yFSCg=
 k8s.io/apimachinery v0.30.2/go.mod h1:iexa2somDaxdnj7bha06bhb43Zpa6eWH8N8dbqVjTUc=
-k8s.io/client-go v0.30.1 h1:uC/Ir6A3R46wdkgCV3vbLyNOYyCJ8oZnjtJGKfytl/Q=
-k8s.io/client-go v0.30.1/go.mod h1:wrAqLNs2trwiCH/wxxmT/x3hKVH9PuV0GGW0oDoHVqc=
+k8s.io/client-go v0.30.2 h1:sBIVJdojUNPDU/jObC+18tXWcTJVcwyqS9diGdWHk50=
+k8s.io/client-go v0.30.2/go.mod h1:JglKSWULm9xlJLx4KCkfLLQ7XwtlbflV6uFFSHTMgVs=
 k8s.io/klog/v2 v2.120.1 h1:QXU6cPEOIslTGvZaXvFWiP9VKyeet3sawzTOvdXb4Vw=
 k8s.io/klog/v2 v2.120.1/go.mod h1:3Jpz1GvMt720eyJH1ckRHK1EDfpxISzJ7I9OYgaDtPE=
 k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 h1:BZqlfIlq5YbRMFko6/PM7FjZpUb45WallggurYhKGag=
