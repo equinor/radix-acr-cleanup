@@ -62,7 +62,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: {{ .Values.servicePrincipalSecret }}
-              mountPath: /{{ .Chart.Name }}/.azure
+              mountPath: /app/.azure
               readOnly: true
             {{- with .Values.extraVolumeMounts }}
               {{- toYaml . | nindent 12 }}
