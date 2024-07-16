@@ -13,7 +13,7 @@ fi
 # the network is not ready and az login cannot connect to login.microsoftonline.com.
 az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${TENANT} || exit
 
-/radix-acr-cleanup/radix-acr-cleanup \
+./radix-acr-cleanup \
   --period=${PERIOD} \
   --registry=${REGISTRY} \
   --cluster-type=${CLUSTER_TYPE} \

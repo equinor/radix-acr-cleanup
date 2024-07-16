@@ -8,7 +8,9 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,10 +20,10 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/acr"
-	"github.com/equinor/radix-acr-cleanup/pkg/delaytick"
 	"github.com/equinor/radix-acr-cleanup/pkg/image"
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
-	"github.com/equinor/radix-acr-cleanup/pkg/timewindow"
+	"github.com/equinor/radix-common/utils/delaytick"
+	"github.com/equinor/radix-common/utils/timewindow"
 	"github.com/equinor/radix-operator/pkg/apis/kube"
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
@@ -64,6 +66,9 @@ var nrListManifestErrors = promauto.NewCounterVec(
 	}, []string{clusterTypeLabel, repositoryLabel})
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGTERM)
+	defer cancel()
+
 	fs := initializeFlagSet()
 
 	var (
@@ -90,6 +95,7 @@ func main() {
 
 	if stringIsNilOrEmpty(registry) || stringIsNilOrEmpty(clusterType) || stringIsNilOrEmpty(activeClusterName) {
 		flag.PrintDefaults()
+		<-ctx.Done()
 		os.Exit(1)
 	}
 
@@ -111,12 +117,12 @@ func main() {
 	log.Info().Msgf("Whitelisted: %s", *whitelisted)
 
 	kubeClient, radixClient := getKubernetesClient()
-	kubeutil, err := kube.New(kubeClient, radixClient, nil)
+	kubeutil, err := kube.New(kubeClient, radixClient, nil, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	go maintainImages(kubeutil, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
+	go maintainImages(ctx, kubeutil, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
 		*registry, *clusterType, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
@@ -124,6 +130,7 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal().Err(err).Msg("Server exited unexpectedly")
 	}
+	<-ctx.Done()
 }
 
 func initZerologger(ctx context.Context, logLevel string, prettyPrint bool) (context.Context, error) {
@@ -144,10 +151,7 @@ func initZerologger(ctx context.Context, logLevel string, prettyPrint bool) (con
 	return ctx, nil
 }
 
-func maintainImages(kubeutil *kube.Kube,
-	cleanupDays []string, cleanupStart string, cleanupEnd string, period time.Duration,
-	registry, clusterType, activeClusterName string, deleteUntagged bool,
-	retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, registry, clusterType, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 
 	if err != nil {
@@ -157,13 +161,13 @@ func maintainImages(kubeutil *kube.Kube,
 	source := rand.NewSource(time.Now().UnixNano())
 	tick := delaytick.New(source, period)
 	for range tick {
-		time := time.Now()
-		if window.Contains(time) {
-			log.Info().Msgf("Start deleting images %s", time)
-			deleteImagesBelongingTo(kubeutil, registry, clusterType, activeClusterName,
+		now := time.Now()
+		if window.Contains(now) {
+			log.Info().Msgf("Start deleting images %s", now)
+			deleteImagesBelongingTo(ctx, kubeutil, registry, clusterType, activeClusterName,
 				deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
-			log.Info().Msgf("%s is outside of window. Continue sleeping", time)
+			log.Info().Msgf("%s is outside of window. Continue sleeping", now)
 		}
 	}
 }
@@ -193,8 +197,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeClusterName string,
-	deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry, clusterType, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
 	defer func() {
@@ -202,12 +205,12 @@ func deleteImagesBelongingTo(kubeutil *kube.Kube, registry, clusterType, activeC
 		log.Info().Dur("ellapsed-ms", duration).Msgf("It took %s to run", duration)
 	}()
 
-	if !isActiveCluster(kubeutil, activeClusterName) {
+	if !isActiveCluster(ctx, kubeutil, activeClusterName) {
 		log.Error().Msg("Current cluster is not active cluster, abort")
 		return
 	}
 
-	imagesInCluster, err := listActiveImagesInCluster(kubeutil)
+	imagesInCluster, err := listActiveImagesInCluster(ctx, kubeutil)
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to list images in cluster")
 		return
@@ -330,8 +333,8 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 }
 
 // Checks for existence of active cluster ingresses in prod environment for radix-api app to determine if this is the active cluster
-func isActiveCluster(kubeutil *kube.Kube, activeClusterName string) bool {
-	currentClusterName, err := kubeutil.GetClusterName()
+func isActiveCluster(ctx context.Context, kubeutil *kube.Kube, activeClusterName string) bool {
+	currentClusterName, err := kubeutil.GetClusterName(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -361,31 +364,31 @@ func isManifestWithinGracePeriod(manifest manifest.Data, time time.Time, gracePe
 }
 
 // Lists distinct images in cluster based on all RadixDeployments
-func listActiveImagesInCluster(kubeutil *kube.Kube) ([]image.Data, error) {
+func listActiveImagesInCluster(ctx context.Context, kubeutil *kube.Kube) ([]image.Data, error) {
 	imagesInCluster := make([]image.Data, 0)
 
-	rds, err := kubeutil.ListRadixDeployments(corev1.NamespaceAll)
+	rds, err := kubeutil.ListRadixDeployments(ctx, corev1.NamespaceAll)
 	if err != nil {
 		return imagesInCluster, err
 	}
 
 	for _, rd := range rds {
 		for _, component := range rd.Spec.Components {
-			image := image.Parse(component.Image)
-			if image == nil {
+			componentImage := image.Parse(component.Image)
+			if componentImage == nil {
 				continue
 			}
 
-			imagesInCluster = append(imagesInCluster, *image)
+			imagesInCluster = append(imagesInCluster, *componentImage)
 		}
 
 		for _, job := range rd.Spec.Jobs {
-			image := image.Parse(job.Image)
-			if image == nil {
+			componentImage := image.Parse(job.Image)
+			if componentImage == nil {
 				continue
 			}
 
-			imagesInCluster = append(imagesInCluster, *image)
+			imagesInCluster = append(imagesInCluster, *componentImage)
 		}
 	}
 
