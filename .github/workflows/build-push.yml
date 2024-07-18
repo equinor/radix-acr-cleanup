@@ -31,13 +31,13 @@ jobs:
         - name: "platform"
           ref: "refs/heads/release"
           acr-name: "radixprod"
-          client-id: "9304412c-98e6-414c-bde4-c5d5047add70"
+          client-id: "044f760d-aabb-4d29-a879-e774f16e3bcc"
           subscription-id: "ded7ca41-37c8-4085-862f-b11d21ab341a"
 
         - name: "c2"
           ref: "refs/heads/release"
           acr-name: "radixc2prod"
-          client-id: "9304412c-98e6-414c-bde4-c5d5047add70"
+          client-id: "581bb747-7b9f-4e80-a843-249eafb0a5fa"
           subscription-id: "ded7ca41-37c8-4085-862f-b11d21ab341a"
 
     steps:
