@@ -3,40 +3,29 @@ VERSION 	?= latest
 
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 HASH := $(shell git rev-parse HEAD)
-TAG := $(BRANCH)-$(HASH)
+TAG := $(subst /,_,$(BRANCH))-$(HASH)
 
 DOCKER_REGISTRY	?= $(CONTAINER_REPO).azurecr.io
 CONTAINER_REPO ?= radix$(ENVIRONMENT)
 
-build:
-	docker build -t radix-acr-cleanup .
+DOCKER_BUILDX_BUILD_BASE_CMD := docker buildx build -t $(DOCKER_REGISTRY)/radix-acr-cleanup:$(TAG) -t $(DOCKER_REGISTRY)/radix-acr-cleanup:$(subst /,_,$(BRANCH))-$(VERSION) --platform linux/arm64,linux/amd64 -f Dockerfile
 
+.PHONY: build
+build:
+	${DOCKER_BUILDX_BUILD_BASE_CMD} .
+
+.PHONY: build-push
 build-push:
 	az acr login --name $(CONTAINER_REPO)
-	docker build -t $(DOCKER_REGISTRY)/radix-acr-cleanup:$(TAG) -t $(DOCKER_REGISTRY)/radix-acr-cleanup:$(BRANCH)-$(VERSION) .
-	docker push $(DOCKER_REGISTRY)/radix-acr-cleanup:$(BRANCH)-$(HASH)
-	docker push $(DOCKER_REGISTRY)/radix-acr-cleanup:$(TAG)
+	${DOCKER_BUILDX_BUILD_BASE_CMD} --push .
 
-deploy-via-helm:
-	make build-push
-
-	# Will need to be installed in default namespace
-	# as it relies on radix-sp-acr-azure secret
-	helm upgrade --install radix-acr-cleanup \
-	    ./charts/radix-acr-cleanup/ \
-		--set image.repository=$(DOCKER_REGISTRY)/radix-acr-cleanup \
-		--set image.tag=$(TAG) \
-		--set period=10s \
-		--set metrics.enabled=true \
-		--namespace default
-
+.PHONY: test
 test:
 	go test -cover `go list ./...`
 
+.PHONY: lint
 lint: bootstrap
 	golangci-lint run
-
-
 
 HAS_GOLANGCI_LINT := $(shell command -v golangci-lint;)
 
