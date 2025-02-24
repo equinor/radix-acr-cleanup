@@ -1,12 +1,12 @@
 module github.com/equinor/radix-acr-cleanup
 
-go 1.22.0
+go 1.23.0
 
-toolchain go1.22.5
+toolchain go1.23.6
 
 require (
 	github.com/equinor/radix-common v1.9.7
-	github.com/equinor/radix-operator v1.68.4
+	github.com/equinor/radix-operator v1.72.4
 	github.com/prometheus/client_golang v1.20.2
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/pflag v1.0.5
