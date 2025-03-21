@@ -65,6 +65,8 @@ The `radix-acr-cleanup` pod exposes metrics (:8080/metrics), `radix_acr_images_d
 
 ## Developing
 
+Make sure you have [pre-commit](https://pre-commit.com/) installed. Run `pre-commit install` to install the pre-commit hooks.
+
 You need Go installed. Make sure GOPATH and GOROOT are properly set up. Clone the repo into your GOPATH and run go mod download
 
 ## Contributing

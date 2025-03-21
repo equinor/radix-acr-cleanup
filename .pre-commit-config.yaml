@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect secrets in your data.
+        entry: wsl.exe zsh -c "~/go/bin/trufflehog git file://. --since-commit HEAD --no-verification --fail"
+
+        language: system
+        stages: ["pre-commit", "pre-push"]
