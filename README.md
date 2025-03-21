@@ -65,6 +65,8 @@ The `radix-acr-cleanup` pod exposes metrics (:8080/metrics), `radix_acr_images_d
 
 ## Developing
 
+Make sure you have [pre-commit](https://pre-commit.com/) installed. Run `make bootstrap` to Install and configure pre-commit. This wil run `trufflehog` before any commits.
+
 You need Go installed. Make sure GOPATH and GOROOT are properly set up. Clone the repo into your GOPATH and run go mod download
 
 ## Contributing
