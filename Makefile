@@ -35,6 +35,6 @@ ifndef HAS_GOLANGCI_LINT
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.3
 endif
 ifndef HAS_PRE_COMMIT
-	pip install pre-commit --user
+	pip3 install pre-commit --user
 endif
 	pre-commit install
