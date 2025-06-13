@@ -1,11 +1,10 @@
 package manifest
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 // Data Structure to hold manifest information
@@ -18,7 +17,7 @@ type Data struct {
 // FromData Returns manifests from byte array
 func FromData(data []byte) ([]Data, error) {
 	manifests := make([]Data, 0)
-	err := yaml.Unmarshal(data, &manifests)
+	err := json.Unmarshal(data, &manifests)
 	if err != nil {
 		return nil, err
 	}
