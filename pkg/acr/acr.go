@@ -2,13 +2,13 @@ package acr
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/logwriter"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/yaml.v3"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
 )
@@ -89,7 +89,7 @@ func newListRepositoriesCommand(registry string) *exec.Cmd {
 
 func getRepositoriesFromStringData(data string) ([]string, error) {
 	repositories := make([]string, 0)
-	err := yaml.Unmarshal([]byte(data), &repositories)
+	err := json.Unmarshal([]byte(data), &repositories)
 	if err != nil {
 		return nil, err
 	}

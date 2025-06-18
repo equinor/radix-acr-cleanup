@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM docker.io/golang:1.23.6-alpine3.20 AS builder
+FROM --platform=$BUILDPLATFORM docker.io/golang:1.24-alpine3.22 AS builder
 
 ARG TARGETARCH
 
@@ -17,7 +17,7 @@ COPY . .
 RUN go build -ldflags="-s -w" -o /build/radix-acr-cleanup ./cmd/acr-cleanup/.
 
 # Final stage
-FROM mcr.microsoft.com/azure-cli:2.68.0
+FROM mcr.microsoft.com/azure-cli:2.74.0
 
 WORKDIR /app/
 
