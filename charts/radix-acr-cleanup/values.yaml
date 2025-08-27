@@ -48,8 +48,8 @@ serviceAccount:
   annotations: {}
 
 image:
-  repository: xx
-  tag: xx
+  repository: ghcr.io/equinor/radix/acr-cleanup
+  tag: ""
   pullPolicy: Always
 
 imagePullSecrets: []

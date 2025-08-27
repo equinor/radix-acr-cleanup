@@ -62,7 +62,7 @@ spec:
               value: {{ .Values.cleanupEnd | quote }}
             - name: WHITELISTED
               value: {{ include "helm-toolkit.utils.joinListWithComma" .Values.whitelisted | quote }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: {{ .Values.servicePrincipalSecret }}

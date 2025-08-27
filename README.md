@@ -63,11 +63,44 @@ Note that when using smaller time windows, you should consider shortening the ch
 
 The `radix-acr-cleanup` pod exposes metrics (:8080/metrics), `radix_acr_images_deleted` which tells the number of manifests deleted (or which would have been deleted if `perform-delete` set to `true`) and `radix_acr_images_retained` for the number of images not deleted from ACR.
 
-## Developing
+## Development Process
 
-Make sure you have [pre-commit](https://pre-commit.com/) installed. Run `make bootstrap` to Install and configure pre-commit. This wil run `trufflehog` before any commits.
+This project follows a **trunk-based development** approach.
 
-You need Go installed. Make sure GOPATH and GOROOT are properly set up. Clone the repo into your GOPATH and run go mod download
+### 🔁 Workflow
+
+- **External contributors** should:
+  - Fork the repository
+  - Create a feature branch in their fork
+
+- **Maintainers** may create feature branches directly in the main repository.
+
+### ✅ Merging Changes
+
+All changes must be merged into the `master` branch using **pull requests** with **squash commits**.
+
+The squash commit message must follow the [Conventional Commits](https://www.conventionalcommits.org/en/about/) specification.
+
+
+## Release Process
+
+Merging a pull request into `master` triggers the **Prepare release pull request** workflow.  
+This workflow analyzes the commit messages to determine whether the version number should be bumped — and if so, whether it's a major, minor, or patch change.  
+
+It then creates two pull requests:
+
+- one for the new stable version (e.g. `1.2.3`), and  
+- one for a pre-release version where `-rc.[number]` is appended (e.g. `1.2.3-rc.1`).
+
+---
+
+Merging either of these pull requests triggers the **Create releases and tags** workflow.  
+This workflow reads the version stored in `version.txt`, creates a GitHub release, and tags it accordingly.
+
+The new tag triggers the **Build and deploy Docker and Helm** workflow, which:
+
+- builds and pushes a new container image and Helm chart to `ghcr.io`, and  
+- uploads the Helm chart as an artifact to the corresponding GitHub release.
 
 ## Contributing
 
