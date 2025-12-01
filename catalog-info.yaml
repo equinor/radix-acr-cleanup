@@ -9,4 +9,4 @@ spec:
   type: service
   lifecycle: production
   owner: omnia-radix
-  system: system:default/Radix
+  system: default/Radix
