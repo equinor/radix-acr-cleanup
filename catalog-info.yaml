@@ -4,7 +4,9 @@ metadata:
   name: radix-acr-cleanup
   annotations:
     github.com/project-slug: equinor/radix-acr-cleanup
+  description: Cleanup service for images no longer used in the cluster.
 spec:
-  type: other
-  lifecycle: unknown
+  type: service
+  lifecycle: production
   owner: omnia-radix
+  system: system:default/Radix
