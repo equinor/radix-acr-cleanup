@@ -28,7 +28,6 @@ lint: bootstrap
 	golangci-lint run
 
 HAS_GOLANGCI_LINT := $(shell command -v golangci-lint;)
-HAS_PRE_COMMIT := $(shell command -v pre-commit;)
 
 bootstrap:
 ifndef HAS_GOLANGCI_LINT
