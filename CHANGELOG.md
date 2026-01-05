@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.0..v1.4.1) - 2026-01-05
+
+### 🐛 Bug Fixes
+
+- Bump dependencies (#115) - ([0b450e5](https://github.com/equinor/radix-acr-cleanup/commit/0b450e58aab75b949b85546fb132d34d0e86d963)) by @dependabot[bot] in [#115](https://github.com/equinor/radix-acr-cleanup/pull/115)
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Remove old build-push workflow - ([9d16a25](https://github.com/equinor/radix-acr-cleanup/commit/9d16a25d65dfb917ba5c2cb968a9a6bbe7486ccd)) by @nilsgstrabo in [#112](https://github.com/equinor/radix-acr-cleanup/pull/112)
+
+- Add catalog-info.yaml config file (#113) - ([bb2dd83](https://github.com/equinor/radix-acr-cleanup/commit/bb2dd839a6516325a275d321d979de2f0a59a887)) by @emirgens in [#113](https://github.com/equinor/radix-acr-cleanup/pull/113)
+
+
 ## [1.4.0](https://github.com/equinor/radix-acr-cleanup/compare/v1.3.2..v1.4.0) - 2025-08-27
 
 ### 🚀 Features
@@ -9,6 +23,9 @@ All notable changes to this project will be documented in this file.
 - *(ci)* Configure new release workflows - ([ff0ceaa](https://github.com/equinor/radix-acr-cleanup/commit/ff0ceaab3b8a042b27f876d44fddf365dff12864)) by @nilsgstrabo in [#106](https://github.com/equinor/radix-acr-cleanup/pull/106)
 
 
+## New Contributors ❤️
+
+* @github-actions[bot] made their first contribution in [#110](https://github.com/equinor/radix-acr-cleanup/pull/110)
 ## [1.3.2] - 2025-06-13
 
 ### 🚀 Features
