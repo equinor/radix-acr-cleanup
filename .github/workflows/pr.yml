@@ -1,4 +1,6 @@
 name: radix-acr-cleanup-pr
+permissions:
+  contents: read
 on:
   pull_request:
     branches:
