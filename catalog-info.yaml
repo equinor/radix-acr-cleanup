@@ -2,11 +2,12 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: radix-acr-cleanup
+  title: Radix ACR cleanup
+  description: "Cleanup service for images no longer used in the cluster"
   annotations:
     github.com/project-slug: equinor/radix-acr-cleanup
-  description: Cleanup service for images no longer used in the cluster.
 spec:
   type: service
   lifecycle: production
-  owner: omnia-radix
-  system: default/Radix
+  owner: team-radix
+  system: system:default/Radix
