@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.1..v1.4.2) - 2026-02-17
+
+### 🐛 Bug Fixes
+
+- *(deps)* Update Go version to 1.25.7 (#122) - ([c016367](https://github.com/equinor/radix-acr-cleanup/commit/c016367e0c64ad6ed2710f1d0577c7edf5e02346)) by @nilsgstrabo in [#122](https://github.com/equinor/radix-acr-cleanup/pull/122)
+
+
+### 📚 Documentation
+
+- Update catalog-info.yaml (#121) - ([518cbd6](https://github.com/equinor/radix-acr-cleanup/commit/518cbd69864f1b9ff829c004fd2fe5f58904c795)) by @emirgens in [#121](https://github.com/equinor/radix-acr-cleanup/pull/121)
+
+
+### ⚙️ Miscellaneous Tasks
+
+- Set workflow permissions (#120) - ([59f74f9](https://github.com/equinor/radix-acr-cleanup/commit/59f74f95663137be8107a275f61acadfc9a8413a)) by @nilsgstrabo in [#120](https://github.com/equinor/radix-acr-cleanup/pull/120)
+
+
 ## [1.4.1](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.0..v1.4.1) - 2026-01-05
 
 ### 🐛 Bug Fixes
