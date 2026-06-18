@@ -41,15 +41,15 @@ spec:
             - name: AZURE_CREDENTIALS_FILE
               value: {{ .Values.azureCredentialsFile }}
             - name: PERIOD
-              value: {{ .Values.period }}
+              value: {{ .Values.period | quote }}
             - name: REGISTRY
-              value: {{ .Values.registry }}
+              value: {{ .Values.registry | quote }}
             - name: CLUSTER_TYPE
-              value: {{ .Values.clusterType }}
+              value: {{ .Values.clusterType | quote }}
             - name: ACTIVE_CLUSTER_NAME
-              value: {{ .Values.activeClusterName }}
+              value: {{ .Values.activeClusterName | quote }}
             - name: CURRENT_CLUSTER_NAME
-              value: {{ .Values.currentClusterName }}
+              value: {{ .Values.currentClusterName | quote }}
             - name: DELETE_UNTAGGED
               value: {{ .Values.deleteUntagged | quote }}
             - name: RETAIN_LATEST_UNTAGGED

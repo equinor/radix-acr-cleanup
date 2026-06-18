@@ -1,6 +1,6 @@
 module github.com/equinor/radix-acr-cleanup
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/equinor/radix-common v1.11.0

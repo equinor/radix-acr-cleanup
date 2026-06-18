@@ -333,7 +333,6 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 	return false
 }
 
-// Checks for existence of active cluster ingresses in prod environment for radix-api app to determine if this is the active cluster
 func isActiveCluster(currentClusterName, activeClusterName string) bool {
 	return strings.EqualFold(currentClusterName, activeClusterName)
 }
