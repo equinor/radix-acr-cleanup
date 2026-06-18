@@ -207,7 +207,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 		log.Info().Dur("ellapsed-ms", duration).Msgf("It took %s to run", duration)
 	}()
 
-	if !isActiveCluster(ctx, currentClusterName, activeClusterName) {
+	if !isActiveCluster(currentClusterName, activeClusterName) {
 		log.Error().Msg("Current cluster is not active cluster, abort")
 		return
 	}
@@ -335,7 +335,7 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 }
 
 // Checks for existence of active cluster ingresses in prod environment for radix-api app to determine if this is the active cluster
-func isActiveCluster(ctx context.Context, currentClusterName, activeClusterName string) bool {
+func isActiveCluster(currentClusterName, activeClusterName string) bool {
 	return strings.EqualFold(currentClusterName, activeClusterName)
 }
 
