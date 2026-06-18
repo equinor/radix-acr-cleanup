@@ -75,6 +75,7 @@ func main() {
 		period               = fs.Duration("period", time.Minute*60, "Interval between checks")
 		registry             = fs.String("registry", "", "Name of the ACR registry (Required)")
 		clusterType          = fs.String("cluster-type", "", "Type of cluster (Required)")
+		currentClusterName   = fs.String("current-cluster-name", "", "Name of the current cluster (Required)")
 		activeClusterName    = fs.String("active-cluster-name", "", "Name of the active cluster (Required)")
 		deleteUntagged       = fs.Bool("delete-untagged", false, "Solution can delete untagged images")
 		retainLatestUntagged = fs.Int("retain-latest-untagged", 5, "Solution can retain x number of untagged images if set to delete")
@@ -111,6 +112,7 @@ func main() {
 	log.Info().Msgf("Registry: %s", *registry)
 	log.Info().Msgf("Clustertype: %s", *clusterType)
 	log.Info().Msgf("Active cluster name: %s", *activeClusterName)
+	log.Info().Msgf("Current cluster name: %s", *currentClusterName)
 	log.Info().Msgf("Delete untagged: %t", *deleteUntagged)
 	log.Info().Msgf("Retain untagged: %d", *retainLatestUntagged)
 	log.Info().Msgf("Perform delete: %t", *performDelete)
@@ -123,7 +125,7 @@ func main() {
 	}
 
 	go maintainImages(ctx, kubeutil, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
-		*registry, *clusterType, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
+		*registry, *clusterType, *currentClusterName, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
 	log.Info().Msg("API is serving on port :8080")
@@ -151,7 +153,7 @@ func initZerologger(ctx context.Context, logLevel string, prettyPrint bool) (con
 	return ctx, nil
 }
 
-func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, registry, clusterType, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, registry, clusterType, currentClusterName, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 
 	if err != nil {
@@ -164,7 +166,7 @@ func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []stri
 		now := time.Now()
 		if window.Contains(now) {
 			log.Info().Msgf("Start deleting images %s", now)
-			deleteImagesBelongingTo(ctx, kubeutil, registry, clusterType, activeClusterName,
+			deleteImagesBelongingTo(ctx, kubeutil, registry, clusterType, currentClusterName, activeClusterName,
 				deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
 			log.Info().Msgf("%s is outside of window. Continue sleeping", now)
@@ -197,7 +199,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry, clusterType, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry, clusterType, currentClusterName, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
 	defer func() {
@@ -205,7 +207,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 		log.Info().Dur("ellapsed-ms", duration).Msgf("It took %s to run", duration)
 	}()
 
-	if !isActiveCluster(ctx, kubeutil, activeClusterName) {
+	if !isActiveCluster(ctx, currentClusterName, activeClusterName) {
 		log.Error().Msg("Current cluster is not active cluster, abort")
 		return
 	}
@@ -333,11 +335,7 @@ func isWhitelisted(repository string, whitelisted []string) bool {
 }
 
 // Checks for existence of active cluster ingresses in prod environment for radix-api app to determine if this is the active cluster
-func isActiveCluster(ctx context.Context, kubeutil *kube.Kube, activeClusterName string) bool {
-	currentClusterName, err := kubeutil.GetClusterName(ctx)
-	if err != nil {
-		panic(err)
-	}
+func isActiveCluster(ctx context.Context, currentClusterName, activeClusterName string) bool {
 	return strings.EqualFold(currentClusterName, activeClusterName)
 }
 

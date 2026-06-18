@@ -48,6 +48,8 @@ spec:
               value: {{ .Values.clusterType }}
             - name: ACTIVE_CLUSTER_NAME
               value: {{ .Values.activeClusterName }}
+            - name: CURRENT_CLUSTER_NAME
+              value: {{ .Values.currentClusterName }}
             - name: DELETE_UNTAGGED
               value: {{ .Values.deleteUntagged | quote }}
             - name: RETAIN_LATEST_UNTAGGED
