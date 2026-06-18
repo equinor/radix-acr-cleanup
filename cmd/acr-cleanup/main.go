@@ -118,6 +118,12 @@ func main() {
 	log.Info().Msgf("Perform delete: %t", *performDelete)
 	log.Info().Msgf("Whitelisted: %s", *whitelisted)
 
+	if !isActiveCluster(*currentClusterName, *activeClusterName) {
+		log.Warn().Msgf("Current cluster %s is not active cluster %s, acr cleanup will sleep forever", *currentClusterName, *activeClusterName)
+		<-ctx.Done()
+		return
+	}
+
 	kubeClient, radixClient := getKubernetesClient()
 	kubeutil, err := kube.New(kubeClient, radixClient, nil, nil)
 	if err != nil {
@@ -125,7 +131,7 @@ func main() {
 	}
 
 	go maintainImages(ctx, kubeutil, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
-		*registry, *clusterType, *currentClusterName, *activeClusterName, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
+		*registry, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
 	log.Info().Msg("API is serving on port :8080")
@@ -153,7 +159,7 @@ func initZerologger(ctx context.Context, logLevel string, prettyPrint bool) (con
 	return ctx, nil
 }
 
-func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, registry, clusterType, currentClusterName, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, registry, clusterType string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 
 	if err != nil {
@@ -166,8 +172,7 @@ func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []stri
 		now := time.Now()
 		if window.Contains(now) {
 			log.Info().Msgf("Start deleting images %s", now)
-			deleteImagesBelongingTo(ctx, kubeutil, registry, clusterType, currentClusterName, activeClusterName,
-				deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
+			deleteImagesBelongingTo(ctx, kubeutil, registry, clusterType, deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
 			log.Info().Msgf("%s is outside of window. Continue sleeping", now)
 		}
@@ -199,18 +204,13 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry, clusterType, currentClusterName, activeClusterName string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry, clusterType string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
 	defer func() {
 		duration := time.Since(start)
 		log.Info().Dur("ellapsed-ms", duration).Msgf("It took %s to run", duration)
 	}()
-
-	if !isActiveCluster(currentClusterName, activeClusterName) {
-		log.Error().Msg("Current cluster is not active cluster, abort")
-		return
-	}
 
 	imagesInCluster, err := listActiveImagesInCluster(ctx, kubeutil)
 	if err != nil {

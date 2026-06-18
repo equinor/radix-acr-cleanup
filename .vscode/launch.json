@@ -15,7 +15,7 @@
 				"--period=10s",
 				"--registry=radixdev",
 				"--cluster-type=development",
-				"--current-cluster-name=weekly-25",
+				"--current-cluster-name=weekly-24",
 				"--active-cluster-name=weekly-25",
 				"--delete-untagged=false",
 				"--retain-latest-untagged=5",
