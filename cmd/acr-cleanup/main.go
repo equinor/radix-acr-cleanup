@@ -94,7 +94,7 @@ func main() {
 		return s == nil || len(strings.TrimSpace(*s)) == 0
 	}
 
-	if stringIsNilOrEmpty(registry) || stringIsNilOrEmpty(clusterType) || stringIsNilOrEmpty(activeClusterName) {
+	if stringIsNilOrEmpty(registry) || stringIsNilOrEmpty(clusterType) || stringIsNilOrEmpty(activeClusterName) || stringIsNilOrEmpty(currentClusterName) {
 		flag.PrintDefaults()
 		<-ctx.Done()
 		os.Exit(1)
