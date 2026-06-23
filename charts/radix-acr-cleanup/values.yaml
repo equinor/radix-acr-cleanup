@@ -1,7 +1,7 @@
-registry: xx
-clusterType: xx
-activeClusterName: xx
-currentClusterName: xx
+registry: ""
+clusterType: ""
+activeClusterName: ""
+currentClusterName: ""
 
 azureTenantId: 3aa4a235-b6e2-48d5-9195-7fcf05b459b0
 azureCredentialsFile: /app/.azure/sp_credentials.json

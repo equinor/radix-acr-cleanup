@@ -43,13 +43,13 @@ spec:
             - name: PERIOD
               value: {{ .Values.period | quote }}
             - name: REGISTRY
-              value: {{ .Values.registry | quote }}
+              value: {{ required "registry is required" .Values.registry | quote }}
             - name: CLUSTER_TYPE
-              value: {{ .Values.clusterType | quote }}
+              value: {{ required "cluster type is required" .Values.clusterType | quote }}
             - name: ACTIVE_CLUSTER_NAME
-              value: {{ .Values.activeClusterName | quote }}
+              value: {{ required "active cluster name is required" .Values.activeClusterName | quote }}
             - name: CURRENT_CLUSTER_NAME
-              value: {{ .Values.currentClusterName | quote }}
+              value: {{ required "current cluster name is required" .Values.currentClusterName | quote }}
             - name: DELETE_UNTAGGED
               value: {{ .Values.deleteUntagged | quote }}
             - name: RETAIN_LATEST_UNTAGGED
