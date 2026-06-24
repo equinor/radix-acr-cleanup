@@ -1,6 +1,7 @@
-registry: xx
-clusterType: xx
-activeClusterName: xx
+registry: ""
+clusterType: ""
+activeClusterName: ""
+currentClusterName: ""
 
 azureTenantId: 3aa4a235-b6e2-48d5-9195-7fcf05b459b0
 azureCredentialsFile: /app/.azure/sp_credentials.json
@@ -14,25 +15,25 @@ cleanupDays: "su,mo,tu,we,th,fr,sa"
 cleanupStart: "0:00"
 cleanupEnd: "6:00"
 whitelisted:
-- radix-operator
-- radix-pipeline
-- rx
-- buildx
-- radix-cicd-canary
-- radix-image-builder
-- radix-image-builderx
-- radix-tekton
-- radix-image-scanner
-- radix-acr-cleanup
-- gitclone
-- radix-velero-plugin
-- sima-runtime
-- radix-config-2-map
-- radix-cost-allocation
-- radix-job-scheduler-server
-- radix-batch-scheduler
-- radix-vulnerability-scanner
-- kubed
+  - radix-operator
+  - radix-pipeline
+  - rx
+  - buildx
+  - radix-cicd-canary
+  - radix-image-builder
+  - radix-image-builderx
+  - radix-tekton
+  - radix-image-scanner
+  - radix-acr-cleanup
+  - gitclone
+  - radix-velero-plugin
+  - sima-runtime
+  - radix-config-2-map
+  - radix-cost-allocation
+  - radix-job-scheduler-server
+  - radix-batch-scheduler
+  - radix-vulnerability-scanner
+  - kubed
 
 metrics:
   enabled: false
@@ -56,7 +57,7 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-resources: 
+resources:
   limits:
     cpu: 2000m
     memory: 150Mi
