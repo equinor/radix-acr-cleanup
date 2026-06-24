@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.3](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.2..v1.4.3) - 2026-06-24
+
+### 🐛 Bug Fixes
+
+- Handling of current cluster name in Helm chart and application logic (#131) - ([8ffb275](https://github.com/equinor/radix-acr-cleanup/commit/8ffb27524d0610199837628f4c4e2924c7ff03a5)) by @Richard87 in [#131](https://github.com/equinor/radix-acr-cleanup/pull/131)
+
+
+### ⚙️ Miscellaneous Tasks
+
+- *(ci)* Update github workflows to latest version and pin to sha - ([ece58fb](https://github.com/equinor/radix-acr-cleanup/commit/ece58fbef0ddc2a31ae696eb3a989c317d525ae4)) by @sveinpj in [#128](https://github.com/equinor/radix-acr-cleanup/pull/128)
+
+- *(ci)* Bump template-prepare-release-pr to 1.1.0 (#129) - ([dd310ac](https://github.com/equinor/radix-acr-cleanup/commit/dd310ac9a54c0be0bba854750230baebf154103a)) by @nilsgstrabo in [#129](https://github.com/equinor/radix-acr-cleanup/pull/129)
+
+- Add skill-creator from radix-internal (#130) - ([2de8c4c](https://github.com/equinor/radix-acr-cleanup/commit/2de8c4cee644cd9c1c98351772d47582a113e626)) by @emirgens in [#130](https://github.com/equinor/radix-acr-cleanup/pull/130)
+
+
 ## [1.4.2](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.1..v1.4.2) - 2026-02-17
 
 ### 🐛 Bug Fixes
