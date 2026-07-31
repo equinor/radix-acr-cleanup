@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.4](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.3..v1.4.4) - 2026-07-30
+
+### 🐛 Bug Fixes
+
+- *(deps)* Bump go version and dependencies (#136) - ([90fcdb5](https://github.com/equinor/radix-acr-cleanup/commit/90fcdb5f72a4d2f4599dcbf631e0380de69da12e)) by @nilsgstrabo in [#136](https://github.com/equinor/radix-acr-cleanup/pull/136)
+
+
 ## [1.4.3](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.2..v1.4.3) - 2026-06-24
 
 ### 🐛 Bug Fixes
