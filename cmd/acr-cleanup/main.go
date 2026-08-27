@@ -20,10 +20,10 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/equinor/radix-acr-cleanup/pkg/acr"
+	"github.com/equinor/radix-acr-cleanup/pkg/delaytick"
 	"github.com/equinor/radix-acr-cleanup/pkg/image"
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
-	"github.com/equinor/radix-common/utils/delaytick"
-	"github.com/equinor/radix-common/utils/timewindow"
+	"github.com/equinor/radix-acr-cleanup/pkg/timewindow"
 	"github.com/equinor/radix-operator/pkg/apis/kube"
 	radixclient "github.com/equinor/radix-operator/pkg/client/clientset/versioned"
 	"github.com/spf13/pflag"
