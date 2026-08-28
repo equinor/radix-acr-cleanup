@@ -1,6 +1,6 @@
 package timewindow
 
-// Copied from https://raw.githubusercontent.com/weaveworks/kured/master/pkg/timewindow/days.go
+// Original file from https://github.com/kubereboot/kured/blob/main/pkg/timewindow/days.go, licensed Apache-2.0.
 
 import (
 	"fmt"

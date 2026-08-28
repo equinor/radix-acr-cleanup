@@ -5,8 +5,9 @@ import (
 	"time"
 )
 
+// Original file from https://github.com/kubereboot/kured/blob/main/pkg/delaytick/delaytick.go, licensed Apache-2.0.
+
 // New Tick regularly after an initial delay randomly distributed between d/2 and d + d/2
-// Copied from https://github.com/weaveworks/kured/blob/master/pkg/delaytick/delaytick.go
 func New(s rand.Source, d time.Duration) <-chan time.Time {
 	c := make(chan time.Time)
 
