@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"encoding/json"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -65,13 +66,7 @@ func (manifest Data) IsNotTaggedForAnyClustertype() bool {
 
 // Contains Manifest contains image tag
 func (manifest Data) Contains(imageTag string) bool {
-	contains := false
-	for _, tag := range manifest.Tags {
-		if imageTag == tag {
-			contains = true
-			break
-		}
-	}
+	contains := slices.Contains(manifest.Tags, imageTag)
 
 	return contains
 }
