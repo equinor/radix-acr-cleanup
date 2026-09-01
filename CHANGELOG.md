@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.4](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.3..v1.4.4) - 2026-07-30
+## [1.4.5](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.4..v1.4.5) - 2026-08-31
+
+### 🐛 Bug Fixes
+
+- Update codebase to use modern go constructs (#141) - ([8185005](https://github.com/equinor/radix-acr-cleanup/commit/8185005b66ca73436713a11c2ae8ffc42014753f)) by @nilsgstrabo in [#141](https://github.com/equinor/radix-acr-cleanup/pull/141)
+
+
+## [1.4.4](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.3..v1.4.4) - 2026-07-31
 
 ### 🐛 Bug Fixes
 
