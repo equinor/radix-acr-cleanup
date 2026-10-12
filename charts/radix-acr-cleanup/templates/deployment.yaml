@@ -35,6 +35,34 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: azure-login
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          restartPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              while true; do
+                az login \
+                  --service-principal \
+                  --username "$AZURE_CLIENT_ID" \
+                  --tenant "$AZURE_TENANT_ID" \
+                  --federated-token "$(cat "$AZURE_FEDERATED_TOKEN_FILE")" \
+                  --allow-no-subscriptions || true
+                sleep 1800
+              done
+          volumeMounts:
+            - name: azurehome
+              mountPath: /home/nonroot/.azure
+          resources:
+            {{- toYaml .Values.azureLogin.resources | nindent 12 }}
+          {{- with .Values.azureLogin.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           env:
@@ -64,8 +92,10 @@ spec:
               value: {{ include "helm-toolkit.utils.joinListWithComma" .Values.whitelisted | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with .Values.extraVolumeMounts }}
           volumeMounts:
+            - name: azurehome
+              mountPath: /home/nonroot/.azure
+          {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
@@ -90,7 +120,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.extraVolumes }}
       volumes:
+        - name: azurehome
+          emptyDir:
+            sizeLimit: 100M
+      {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
