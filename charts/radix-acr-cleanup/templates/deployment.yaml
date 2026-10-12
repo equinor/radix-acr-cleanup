@@ -17,11 +17,12 @@ spec:
       annotations:
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
-        {{- if (.Values.metrics.annotations) }}
-        {{- toYaml .Values.metrics.annotations | nindent 8 }}
+        {{- if (.Values.metrics.extraAnnotations) }}
+        {{- toYaml .Values.metrics.extraAnnotations | nindent 8 }}
         {{- end }}
       {{- end }}
       labels:
+        azure.workload.identity/use: "true"
         {{- include "radix-acr-cleanup.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "radix-acr-cleanup.serviceAccountName" . }}
@@ -36,10 +37,6 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           env:
-            - name: AZURE_TENANT_ID
-              value: {{ .Values.azureTenantId }}
-            - name: AZURE_CREDENTIALS_FILE
-              value: {{ .Values.azureCredentialsFile }}
             - name: PERIOD
               value: {{ .Values.period | quote }}
             - name: REGISTRY
@@ -66,13 +63,10 @@ spec:
               value: {{ include "helm-toolkit.utils.joinListWithComma" .Values.whitelisted | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.volumeMounts }}
           volumeMounts:
-            - name: {{ .Values.servicePrincipalSecret }}
-              mountPath: /app/.azure
-              readOnly: true
-            {{- with .Values.extraVolumeMounts }}
-              {{- toYaml . | nindent 12 }}
-            {{- end }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 8080
@@ -95,10 +89,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.volumes }}
       volumes:
-        - name: {{ .Values.servicePrincipalSecret }}
-          secret:
-            secretName: {{ .Values.servicePrincipalSecret }}
-        {{- with .Values.extraVolumes }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

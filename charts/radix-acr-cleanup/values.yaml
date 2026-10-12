@@ -3,8 +3,8 @@ clusterType: ""
 activeClusterName: ""
 currentClusterName: ""
 
-azureTenantId: 3aa4a235-b6e2-48d5-9195-7fcf05b459b0
-azureCredentialsFile: /app/.azure/sp_credentials.json
+azureTenantId: ""
+azureClientId: ""
 
 # Parameters to control behavior
 deleteUntagged: false
@@ -14,39 +14,18 @@ period: 60m
 cleanupDays: "su,mo,tu,we,th,fr,sa"
 cleanupStart: "0:00"
 cleanupEnd: "6:00"
-whitelisted:
-  - radix-operator
-  - radix-pipeline
-  - rx
-  - buildx
-  - radix-cicd-canary
-  - radix-image-builder
-  - radix-image-builderx
-  - radix-tekton
-  - radix-image-scanner
-  - radix-acr-cleanup
-  - gitclone
-  - radix-velero-plugin
-  - sima-runtime
-  - radix-config-2-map
-  - radix-cost-allocation
-  - radix-job-scheduler-server
-  - radix-batch-scheduler
-  - radix-vulnerability-scanner
-  - kubed
+whitelisted: []
 
 metrics:
   enabled: false
-  annotations: {}
-
-servicePrincipalSecret: radix-sp-acr-azure
+  extraAnnotations: {}
 
 serviceAccount:
   # The name of the service account to use.
   # If not set, a name is generated using the fullname template
   name: ""
   # Annotations to add to the service account
-  annotations: {}
+  extraAnnotations: {}
 
 image:
   repository: ghcr.io/equinor/radix/acr-cleanup
@@ -83,7 +62,7 @@ securityContext:
   allowPrivilegeEscalation: false
 
 # Additional volumes to add to the radix-acr-cleanup pod.
-extraVolumes: []
+volumes: []
 
 # Additional volume mounts to add to the radix-acr-cleanup pod.
-extraVolumeMounts: []
+volumeMounts: []

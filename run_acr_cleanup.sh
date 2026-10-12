@@ -11,7 +11,12 @@ fi
 # radix-acr-cleanup does not work when login is unsuccesful.
 # In some situation, e.g. when radix-acr-cleanup is scheduled to run on a newly created node,
 # the network is not ready and az login cannot connect to login.microsoftonline.com.
-az login --service-principal -u ${SP_USER} -p ${SP_SECRET} --tenant ${AZURE_TENANT_ID} || exit
+az login \
+  --service-principal \
+  --username "$AZURE_CLIENT_ID" \
+  --tenant "$AZURE_TENANT_ID" \
+  --federated-token "$(cat "$AZURE_FEDERATED_TOKEN_FILE")" \
+  --allow-no-subscriptions || exit
 
 ./radix-acr-cleanup \
   --period=${PERIOD} \
