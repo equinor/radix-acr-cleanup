@@ -60,4 +60,4 @@ jobs:
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
       - name: Helm Lint
         run: |
-          helm lint charts/radix-acr-cleanup --set activeClusterName=active --set currentClusterName=yy --set registry=reg --set clusterType=type
+          helm lint charts/radix-acr-cleanup --set activeClusterName=active --set currentClusterName=yy --set registry=reg --set clusterType=type --set azureClientId=client

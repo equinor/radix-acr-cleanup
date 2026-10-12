@@ -1,11 +1,4 @@
 #!/bin/bash
-if [[ -z "${SP_USER}" ]]; then
-  SP_USER=$(cat ${AZURE_CREDENTIALS_FILE} | jq -r '.id')
-fi
-
-if [[ -z "${SP_SECRET}" ]]; then
-  SP_SECRET=$(cat ${AZURE_CREDENTIALS_FILE} | jq -r '.password')
-fi
 
 # Exit script if az login is unsuccessful.
 # radix-acr-cleanup does not work when login is unsuccesful.
