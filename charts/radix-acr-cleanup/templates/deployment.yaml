@@ -26,6 +26,7 @@ spec:
         {{- include "radix-acr-cleanup.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "radix-acr-cleanup.serviceAccountName" . }}
+      automountServiceAccountToken: true
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
