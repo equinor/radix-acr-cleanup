@@ -22,9 +22,11 @@ spec:
         {{- end }}
       {{- end }}
       labels:
+        azure.workload.identity/use: "true"
         {{- include "radix-acr-cleanup.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "radix-acr-cleanup.serviceAccountName" . }}
+      automountServiceAccountToken: true
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -33,13 +35,52 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: azure-login
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          restartPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              while true; do
+                if az login \
+                  --service-principal \
+                  --username "$AZURE_CLIENT_ID" \
+                  --tenant "$AZURE_TENANT_ID" \
+                  --federated-token "$(cat "$AZURE_FEDERATED_TOKEN_FILE")" \
+                  --allow-no-subscriptions; then
+                  date +%s > /home/nonroot/.azure/login-ok
+                else
+                  rm -f /home/nonroot/.azure/login-ok
+                  exit 1
+                fi
+                sleep 1800
+              done
+          volumeMounts:
+            - name: azurehome
+              mountPath: /home/nonroot/.azure
+          resources:
+            {{- toYaml .Values.azureLogin.resources | nindent 12 }}
+          {{- with .Values.azureLogin.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              until [ -f /home/nonroot/.azure/login-ok ]; do
+                echo "Waiting for Azure login to complete"
+                sleep 5
+              done
+              exec ./run_acr_cleanup.sh
           env:
-            - name: AZURE_TENANT_ID
-              value: {{ .Values.azureTenantId }}
-            - name: AZURE_CREDENTIALS_FILE
-              value: {{ .Values.azureCredentialsFile }}
             - name: PERIOD
               value: {{ .Values.period | quote }}
             - name: REGISTRY
@@ -67,16 +108,24 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
-            - name: {{ .Values.servicePrincipalSecret }}
-              mountPath: /app/.azure
-              readOnly: true
-            {{- with .Values.extraVolumeMounts }}
-              {{- toYaml . | nindent 12 }}
-            {{- end }}
+            - name: azurehome
+              mountPath: /home/nonroot/.azure
+          {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  last_login=$(cat /home/nonroot/.azure/login-ok) &&
+                  now=$(date +%s) &&
+                  [ $((now - last_login)) -lt 2100 ]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- with .Values.securityContext }}
@@ -96,9 +145,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: {{ .Values.servicePrincipalSecret }}
-          secret:
-            secretName: {{ .Values.servicePrincipalSecret }}
-        {{- with .Values.extraVolumes }}
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
+        - name: azurehome
+          emptyDir:
+            sizeLimit: 100M
+      {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
