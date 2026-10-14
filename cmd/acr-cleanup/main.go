@@ -233,16 +233,16 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 			continue
 		}
 
-		log.Debug().Str("repo", repository).Msg("Process repository")
+		log.Info().Str("repo", repository).Msg("Process repository")
 		manifests, err := acr.ListManifests(registry, subscriptionID, repository)
 		if err != nil {
-			log.Error().Str("repo", repository).Err(err).Msg("Unable to get manifests for repository")
+			log.Error().Str("repo", repository).Err(err).Msg("Failed to list manifests for repository")
 			addListManifestError(clusterType, repository)
 			continue
 		}
 		numManifests := len(manifests)
 
-		log.Debug().Str("repo", repository).Int("manifest_count", numManifests).Msg("Process manifests")
+		log.Debug().Str("repo", repository).Int("manifest_count", numManifests).Msg("List manifests")
 		for _, manifest := range manifests {
 			log.Debug().Str("repo", repository).Str("digest", manifest.Digest).Strs("tags", manifest.Tags).Msg("Process manifest")
 			isNotTaggedForAnyClustertype := manifest.IsNotTaggedForAnyClustertype()
@@ -274,7 +274,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 					numManifests--
 				} else {
 					addUntaggedImageRetained(clusterType, repository)
-					log.Info().Str("repo", repository).Str("digest", manifest.Digest).Msg("Manifest is untagged, and is mandated for deletion, but will be retained")
+					log.Debug().Str("repo", repository).Str("digest", manifest.Digest).Msg("Manifest is untagged, and is mandated for deletion, but will be retained")
 				}
 
 				continue
@@ -283,7 +283,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 			isTaggedForCurrentClustertype := manifest.IsTaggedForCurrentClustertype(clusterType)
 			if !isTaggedForCurrentClustertype {
 				addImageRetained(clusterType, repository)
-				log.Info().Str("repo", repository).Str("digest", manifest.Digest).Msg("Manifest is tagged for different cluster type, and should not be deleted")
+				log.Debug().Str("repo", repository).Str("digest", manifest.Digest).Msg("Manifest is tagged for different cluster type, and should not be deleted")
 				continue
 			}
 
@@ -307,15 +307,15 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 func deleteManifest(registry, subscriptionID, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
 	if performDelete {
 		if err := acr.DeleteManifest(registry, subscriptionID, repository, manifest); err != nil {
-			log.Error().Err(err).Msg("Error deleting manifest")
+			log.Error().Err(err).Str("repo", repository).Str("digest", manifest.Digest).Strs("tags", manifest.Tags).Msg("Error deleting manifest")
 			addImageDeleteError(clusterType, repository)
 			return
 		}
 
-		log.Info().Str("repo", repository).Msgf("Deleted digest %s for repository %s for tags %s", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
+		log.Info().Str("repo", repository).Str("digest", manifest.Digest).Strs("tags", manifest.Tags).Msg("Deleted digest")
 
 	} else {
-		log.Info().Str("repo", repository).Msgf("Digest %s for repository %s for tags %s would have been deleted", manifest.Digest, repository, strings.Join(manifest.Tags, ","))
+		log.Info().Str("repo", repository).Str("digest", manifest.Digest).Strs("tags", manifest.Tags).Msg("Digest would have been deleted")
 	}
 
 	// Will log a delete even if perform delete is false, so that

@@ -3,40 +3,29 @@ package acr
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 
-	"github.com/equinor/radix-acr-cleanup/pkg/logwriter"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
 )
-
-// ListRepositoriesError error
-func ListRepositoriesError(registry string, cause error) error {
-	return fmt.Errorf("list repositories for registry %s failed: %w", registry, cause)
-}
-
-// ListManifestsError error
-func ListManifestsError(repository string, cause error) error {
-	return fmt.Errorf("list manifests for repository %s failed: %w", repository, cause)
-}
 
 // ListRepositories Is all available repositories in provided ACR registry
 func ListRepositories(registry, subscriptionID string) ([]string, error) {
 	listCmd := newListRepositoriesCommand(registry, subscriptionID)
 
-	var outb bytes.Buffer
-	listCmd.Stdout = &outb
+	var stdout bytes.Buffer
+	listCmd.Stdout = &stdout
+	var stderr bytes.Buffer
+	listCmd.Stderr = &stderr
 
 	if err := listCmd.Run(); err != nil {
-		return nil, ListRepositoriesError(registry, err)
+		return nil, fmt.Errorf("failed to list repositories: %w: %w", err, errors.New(stderr.String()))
 	}
 
-	repos, err := getRepositoriesFromStringData(outb.String())
+	repos, err := getRepositoriesFromStringData(stdout.String())
 	if err != nil {
-		return nil, ListRepositoriesError(registry, err)
+		return nil, fmt.Errorf("failed process repository data: %w", err)
 	}
 
 	return repos, nil
@@ -46,16 +35,18 @@ func ListRepositories(registry, subscriptionID string) ([]string, error) {
 func ListManifests(registry, subscriptionID, repository string) ([]manifest.Data, error) {
 	listCmd := newListManifestsCommand(registry, subscriptionID, repository)
 
-	var outb bytes.Buffer
-	listCmd.Stdout = &outb
+	var stdout bytes.Buffer
+	listCmd.Stdout = &stdout
+	var stderr bytes.Buffer
+	listCmd.Stderr = &stderr
 
 	if err := listCmd.Run(); err != nil {
-		return nil, ListManifestsError(repository, err)
+		return nil, fmt.Errorf("failed to list manifests: %w: %w", err, errors.New(stderr.String()))
 	}
 
-	manifests, err := manifest.FromDataSorted(outb.Bytes())
+	manifests, err := manifest.FromDataSorted(stdout.Bytes())
 	if err != nil {
-		return nil, ListManifestsError(repository, err)
+		return nil, fmt.Errorf("failed to process manifest data: %w", err)
 	}
 
 	return manifests, nil
@@ -66,26 +57,22 @@ func DeleteManifest(registry, subscriptionID, repository string, manifest manife
 	// Will perform an actual delete
 	deleteCmd := newDeleteManifestsCommand(registry, subscriptionID, repository, manifest.Digest)
 
-	var outb bytes.Buffer
-	deleteCmd.Stdout = &outb
+	var stderr bytes.Buffer
+	deleteCmd.Stderr = &stderr
 
-	return deleteCmd.Run()
+	if err := deleteCmd.Run(); err != nil {
+		return fmt.Errorf("failed to delete manifest: %w: %w", err, errors.New(stderr.String()))
+	}
+	return nil
 }
 
 func newListRepositoriesCommand(registry, subscriptionID string) *exec.Cmd {
 	args := []string{"acr", "repository", "list",
+		"--only-show-errors",
 		"--name", registry,
 		"--subscription", subscriptionID}
 
-	cmd := exec.Command("az", args...)
-	logger := log.With().
-		Str("cmd", cmd.Args[0]).
-		Str("std", "err").
-		Logger()
-
-	cmd.Stderr = logwriter.New(&logger, zerolog.WarnLevel)
-
-	return cmd
+	return exec.Command("az", args...)
 }
 
 func getRepositoriesFromStringData(data string) ([]string, error) {
@@ -99,36 +86,22 @@ func getRepositoriesFromStringData(data string) ([]string, error) {
 
 func newListManifestsCommand(registry, subscriptionID, repository string) *exec.Cmd {
 	args := []string{"acr", "manifest", "list-metadata",
+		"--only-show-errors",
 		"--registry", registry,
 		"--name", repository,
 		"--orderby", "time_asc",
 		"--subscription", subscriptionID}
 
-	cmd := exec.Command("az", args...)
-	logger := log.With().
-		Str("cmd", cmd.Args[0]).
-		Str("std", "err").
-		Logger()
-
-	cmd.Stderr = logwriter.New(&logger, zerolog.WarnLevel)
-
-	return cmd
+	return exec.Command("az", args...)
 }
 
 func newDeleteManifestsCommand(registry, subscriptionID, repository, digest string) *exec.Cmd {
 	args := []string{"acr", "repository", "delete",
+		"--only-show-errors",
 		"--name", registry,
 		"--image", fmt.Sprintf("%s@%s", repository, digest),
 		"--subscription", subscriptionID,
 		"--yes"}
 
-	cmd := exec.Command("az", args...)
-	logger := log.With().
-		Str("cmd", cmd.Args[0]).
-		Str("std", "err").
-		Logger()
-
-	cmd.Stderr = logwriter.New(&logger, zerolog.WarnLevel)
-
-	return cmd
+	return exec.Command("az", args...)
 }
