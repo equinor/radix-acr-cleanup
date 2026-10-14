@@ -24,8 +24,8 @@ func ListManifestsError(repository string, cause error) error {
 }
 
 // ListRepositories Is all available repositories in provided ACR registry
-func ListRepositories(registry string) ([]string, error) {
-	listCmd := newListRepositoriesCommand(registry)
+func ListRepositories(registry, subscriptionID string) ([]string, error) {
+	listCmd := newListRepositoriesCommand(registry, subscriptionID)
 
 	var outb bytes.Buffer
 	listCmd.Stdout = &outb
@@ -43,8 +43,8 @@ func ListRepositories(registry string) ([]string, error) {
 }
 
 // ListManifests Lists all available manifests for a single repository
-func ListManifests(registry, repository string) ([]manifest.Data, error) {
-	listCmd := newListManifestsCommand(registry, repository)
+func ListManifests(registry, subscriptionID, repository string) ([]manifest.Data, error) {
+	listCmd := newListManifestsCommand(registry, subscriptionID, repository)
 
 	var outb bytes.Buffer
 	listCmd.Stdout = &outb
@@ -62,9 +62,9 @@ func ListManifests(registry, repository string) ([]manifest.Data, error) {
 }
 
 // DeleteManifest Will delete a single manifest
-func DeleteManifest(registry, repository string, manifest manifest.Data) error {
+func DeleteManifest(registry, subscriptionID, repository string, manifest manifest.Data) error {
 	// Will perform an actual delete
-	deleteCmd := newDeleteManifestsCommand(registry, repository, manifest.Digest)
+	deleteCmd := newDeleteManifestsCommand(registry, subscriptionID, repository, manifest.Digest)
 
 	var outb bytes.Buffer
 	deleteCmd.Stdout = &outb
@@ -72,9 +72,10 @@ func DeleteManifest(registry, repository string, manifest manifest.Data) error {
 	return deleteCmd.Run()
 }
 
-func newListRepositoriesCommand(registry string) *exec.Cmd {
+func newListRepositoriesCommand(registry, subscriptionID string) *exec.Cmd {
 	args := []string{"acr", "repository", "list",
-		"--name", registry}
+		"--name", registry,
+		"--subscription", subscriptionID}
 
 	cmd := exec.Command("az", args...)
 	logger := log.With().
@@ -96,11 +97,12 @@ func getRepositoriesFromStringData(data string) ([]string, error) {
 	return repositories, nil
 }
 
-func newListManifestsCommand(registry, repository string) *exec.Cmd {
+func newListManifestsCommand(registry, subscriptionID, repository string) *exec.Cmd {
 	args := []string{"acr", "manifest", "list-metadata",
 		"--registry", registry,
 		"--name", repository,
-		"--orderby", "time_asc"}
+		"--orderby", "time_asc",
+		"--subscription", subscriptionID}
 
 	cmd := exec.Command("az", args...)
 	logger := log.With().
@@ -113,10 +115,11 @@ func newListManifestsCommand(registry, repository string) *exec.Cmd {
 	return cmd
 }
 
-func newDeleteManifestsCommand(registry, repository, digest string) *exec.Cmd {
+func newDeleteManifestsCommand(registry, subscriptionID, repository, digest string) *exec.Cmd {
 	args := []string{"acr", "repository", "delete",
 		"--name", registry,
 		"--image", fmt.Sprintf("%s@%s", repository, digest),
+		"--subscription", subscriptionID,
 		"--yes"}
 
 	cmd := exec.Command("az", args...)
