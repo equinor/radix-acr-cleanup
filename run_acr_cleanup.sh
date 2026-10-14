@@ -3,6 +3,7 @@
 exec ./radix-acr-cleanup \
   --period=${PERIOD} \
   --registry=${REGISTRY} \
+  --subscription-id=${SUBSCRIPTION_ID} \
   --cluster-type=${CLUSTER_TYPE} \
   --active-cluster-name=${ACTIVE_CLUSTER_NAME} \
   --current-cluster-name=${CURRENT_CLUSTER_NAME} \
@@ -12,4 +13,6 @@ exec ./radix-acr-cleanup \
   --cleanup-days="${CLEANUP_DAYS}" \
   --cleanup-start="${CLEANUP_START}" \
   --cleanup-end="${CLEANUP_END}" \
-  --whitelisted="${WHITELISTED}"
+  --whitelisted="${WHITELISTED}" \
+  --log-level="${LOG_LEVEL}" \
+  --pretty-print="${PRETTY_PRINT}"

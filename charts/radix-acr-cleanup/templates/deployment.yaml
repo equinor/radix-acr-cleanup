@@ -85,6 +85,8 @@ spec:
               value: {{ .Values.period | quote }}
             - name: REGISTRY
               value: {{ required "registry is required" .Values.registry | quote }}
+            - name: SUBSCRIPTION_ID
+              value: {{ required "subscription id is required" .Values.subscriptionId | quote }}
             - name: CLUSTER_TYPE
               value: {{ required "cluster type is required" .Values.clusterType | quote }}
             - name: ACTIVE_CLUSTER_NAME
@@ -105,6 +107,10 @@ spec:
               value: {{ .Values.cleanupEnd | quote }}
             - name: WHITELISTED
               value: {{ include "helm-toolkit.utils.joinListWithComma" .Values.whitelisted | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.logging.level | quote }}
+            - name: PRETTY_PRINT
+              value: {{ .Values.logging.prettyPrint | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
