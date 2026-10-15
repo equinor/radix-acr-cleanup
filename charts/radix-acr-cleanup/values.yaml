@@ -1,5 +1,4 @@
 registry: ""
-subscriptionId: ""
 clusterType: ""
 activeClusterName: ""
 currentClusterName: ""
@@ -48,19 +47,6 @@ resources:
   requests:
     cpu: 50m
     memory: 150Mi
-
-azureLogin:
-  resources:
-    limits:
-      cpu: 100m
-      memory: 100Mi
-    requests:
-      cpu: 10m
-      memory: 50Mi
-  securityContext:
-    privileged: false
-    readOnlyRootFilesystem: false
-    allowPrivilegeEscalation: false
 
 nodeSelector: {}
 

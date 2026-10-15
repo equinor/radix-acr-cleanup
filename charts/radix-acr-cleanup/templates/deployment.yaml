@@ -35,58 +35,13 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      initContainers:
-        - name: azure-login
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          restartPolicy: Always
-          command:
-            - /bin/sh
-            - -c
-          args:
-            - |
-              while true; do
-                if az login \
-                  --service-principal \
-                  --username "$AZURE_CLIENT_ID" \
-                  --tenant "$AZURE_TENANT_ID" \
-                  --federated-token "$(cat "$AZURE_FEDERATED_TOKEN_FILE")" \
-                  --allow-no-subscriptions; then
-                  date +%s > /home/nonroot/.azure/login-ok
-                else
-                  rm -f /home/nonroot/.azure/login-ok
-                  exit 1
-                fi
-                sleep 1800
-              done
-          volumeMounts:
-            - name: azurehome
-              mountPath: /home/nonroot/.azure
-          resources:
-            {{- toYaml .Values.azureLogin.resources | nindent 12 }}
-          {{- with .Values.azureLogin.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          command:
-            - /bin/sh
-            - -c
-          args:
-            - |
-              until [ -f /home/nonroot/.azure/login-ok ]; do
-                echo "Waiting for Azure login to complete"
-                sleep 5
-              done
-              exec ./run_acr_cleanup.sh
           env:
             - name: PERIOD
               value: {{ .Values.period | quote }}
             - name: REGISTRY
               value: {{ required "registry is required" .Values.registry | quote }}
-            - name: SUBSCRIPTION_ID
-              value: {{ required "subscription id is required" .Values.subscriptionId | quote }}
             - name: CLUSTER_TYPE
               value: {{ required "cluster type is required" .Values.clusterType | quote }}
             - name: ACTIVE_CLUSTER_NAME
@@ -113,25 +68,14 @@ spec:
               value: {{ .Values.logging.prettyPrint | quote }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - name: azurehome
-              mountPath: /home/nonroot/.azure
           {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  last_login=$(cat /home/nonroot/.azure/login-ok) &&
-                  now=$(date +%s) &&
-                  [ $((now - last_login)) -lt 2100 ]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           {{- with .Values.securityContext }}
@@ -150,10 +94,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      volumes:
-        - name: azurehome
-          emptyDir:
-            sizeLimit: 100M
       {{- with .Values.extraVolumes }}
+      volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}

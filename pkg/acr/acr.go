@@ -1,107 +1,92 @@
 package acr
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
+	"context"
 	"fmt"
-	"os/exec"
+	"sort"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	"github.com/equinor/radix-acr-cleanup/pkg/manifest"
 )
 
-// ListRepositories Is all available repositories in provided ACR registry
-func ListRepositories(registry, subscriptionID string) ([]string, error) {
-	listCmd := newListRepositoriesCommand(registry, subscriptionID)
+type Client struct {
+	client *azcontainerregistry.Client
+}
 
-	var stdout bytes.Buffer
-	listCmd.Stdout = &stdout
-	var stderr bytes.Buffer
-	listCmd.Stderr = &stderr
-
-	if err := listCmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to list repositories: %w: %w", err, errors.New(stderr.String()))
-	}
-
-	repos, err := getRepositoriesFromStringData(stdout.String())
+func NewClient(registry string) (*Client, error) {
+	credential, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed process repository data: %w", err)
+		return nil, fmt.Errorf("failed to create Azure credential: %w", err)
 	}
 
-	return repos, nil
-}
-
-// ListManifests Lists all available manifests for a single repository
-func ListManifests(registry, subscriptionID, repository string) ([]manifest.Data, error) {
-	listCmd := newListManifestsCommand(registry, subscriptionID, repository)
-
-	var stdout bytes.Buffer
-	listCmd.Stdout = &stdout
-	var stderr bytes.Buffer
-	listCmd.Stderr = &stderr
-
-	if err := listCmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to list manifests: %w: %w", err, errors.New(stderr.String()))
-	}
-
-	manifests, err := manifest.FromDataSorted(stdout.Bytes())
+	client, err := azcontainerregistry.NewClient(fmt.Sprintf("https://%s", registry), credential, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process manifest data: %w", err)
+		return nil, fmt.Errorf("failed to create ACR client: %w", err)
 	}
 
-	return manifests, nil
+	return &Client{client: client}, nil
 }
 
-// DeleteManifest Will delete a single manifest
-func DeleteManifest(registry, subscriptionID, repository string, manifest manifest.Data) error {
-	// Will perform an actual delete
-	deleteCmd := newDeleteManifestsCommand(registry, subscriptionID, repository, manifest.Digest)
-
-	var stderr bytes.Buffer
-	deleteCmd.Stderr = &stderr
-
-	if err := deleteCmd.Run(); err != nil {
-		return fmt.Errorf("failed to delete manifest: %w: %w", err, errors.New(stderr.String()))
-	}
-	return nil
-}
-
-func newListRepositoriesCommand(registry, subscriptionID string) *exec.Cmd {
-	args := []string{"acr", "repository", "list",
-		"--only-show-errors",
-		"--name", registry,
-		"--subscription", subscriptionID}
-
-	return exec.Command("az", args...)
-}
-
-func getRepositoriesFromStringData(data string) ([]string, error) {
+func (client *Client) ListRepositories(ctx context.Context) ([]string, error) {
 	repositories := make([]string, 0)
-	err := json.Unmarshal([]byte(data), &repositories)
-	if err != nil {
-		return nil, err
+	pager := client.client.NewListRepositoriesPager(nil)
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list repositories: %w", err)
+		}
+		for _, repository := range page.Repositories.Names {
+			if repository != nil {
+				repositories = append(repositories, *repository)
+			}
+		}
 	}
+
 	return repositories, nil
 }
 
-func newListManifestsCommand(registry, subscriptionID, repository string) *exec.Cmd {
-	args := []string{"acr", "manifest", "list-metadata",
-		"--only-show-errors",
-		"--registry", registry,
-		"--name", repository,
-		"--orderby", "time_asc",
-		"--subscription", subscriptionID}
+func (client *Client) ListManifests(ctx context.Context, repository string) ([]manifest.Data, error) {
+	orderBy := azcontainerregistry.ArtifactManifestOrderByLastUpdatedOnAscending
+	pager := client.client.NewListManifestsPager(repository, &azcontainerregistry.ClientListManifestsOptions{
+		OrderBy: &orderBy,
+	})
+	manifests := make([]manifest.Data, 0)
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list manifests: %w", err)
+		}
+		for _, attributes := range page.Manifests.Attributes {
+			if attributes == nil {
+				continue
+			}
 
-	return exec.Command("az", args...)
+			item := manifest.Data{}
+			if attributes.Digest != nil {
+				item.Digest = *attributes.Digest
+			}
+			if attributes.LastUpdatedOn != nil {
+				item.LastUpdateTime = *attributes.LastUpdatedOn
+			}
+			for _, tag := range attributes.Tags {
+				if tag != nil {
+					item.Tags = append(item.Tags, *tag)
+				}
+			}
+			manifests = append(manifests, item)
+		}
+	}
+
+	sort.SliceStable(manifests, func(i, j int) bool {
+		return manifests[i].LastUpdateTime.Before(manifests[j].LastUpdateTime)
+	})
+	return manifests, nil
 }
 
-func newDeleteManifestsCommand(registry, subscriptionID, repository, digest string) *exec.Cmd {
-	args := []string{"acr", "repository", "delete",
-		"--only-show-errors",
-		"--name", registry,
-		"--image", fmt.Sprintf("%s@%s", repository, digest),
-		"--subscription", subscriptionID,
-		"--yes"}
-
-	return exec.Command("az", args...)
+func (client *Client) DeleteManifest(ctx context.Context, repository string, item manifest.Data) error {
+	if _, err := client.client.DeleteManifest(ctx, repository, item.Digest, nil); err != nil {
+		return fmt.Errorf("failed to delete manifest: %w", err)
+	}
+	return nil
 }

@@ -17,7 +17,7 @@ COPY . .
 RUN go build -ldflags="-s -w" -o /build/radix-acr-cleanup ./cmd/acr-cleanup/.
 
 # Final stage
-FROM mcr.microsoft.com/azure-cli:2.91.0
+FROM alpine:3.24
 
 WORKDIR /app/
 

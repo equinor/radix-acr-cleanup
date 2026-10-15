@@ -1,9 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 exec ./radix-acr-cleanup \
   --period=${PERIOD} \
   --registry=${REGISTRY} \
-  --subscription-id=${SUBSCRIPTION_ID} \
   --cluster-type=${CLUSTER_TYPE} \
   --active-cluster-name=${ACTIVE_CLUSTER_NAME} \
   --current-cluster-name=${CURRENT_CLUSTER_NAME} \
