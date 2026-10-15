@@ -46,6 +46,16 @@ func (client *Client) ListRepositories(ctx context.Context) ([]string, error) {
 	return repositories, nil
 }
 
+// CheckAccess verifies if the client has access to the ACR by attempting to list repositories.
+func (client *Client) CheckAccess(ctx context.Context) error {
+	pager := client.client.NewListRepositoriesPager(&azcontainerregistry.ClientListRepositoriesOptions{MaxNum: new(int32(1))})
+	if _, err := pager.NextPage(ctx); err != nil {
+		return fmt.Errorf("failed to list repositories: %w", err)
+	}
+
+	return nil
+}
+
 func (client *Client) ListManifests(ctx context.Context, repository string) ([]manifest.Data, error) {
 	orderBy := azcontainerregistry.ArtifactManifestOrderByLastUpdatedOnAscending
 	pager := client.client.NewListManifestsPager(repository, &azcontainerregistry.ClientListManifestsOptions{

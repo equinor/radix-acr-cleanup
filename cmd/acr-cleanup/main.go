@@ -127,7 +127,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create ACR client")
 	}
-	if _, err := acrClient.ListRepositories(ctx); err != nil {
+	if err := acrClient.CheckAccess(ctx); err != nil {
 		log.Fatal().Err(err).Msg("Failed to authenticate with ACR")
 	}
 
