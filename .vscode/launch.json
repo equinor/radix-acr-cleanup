@@ -19,7 +19,7 @@
 				"--active-cluster-name=weekly-42",
 				"--delete-untagged=true",
 				"--retain-latest-untagged=5",
-				"--perform-delete=true",
+				"--perform-delete=false",
 				"--cleanup-days=su,mo,tu,we,th,fr,sa",
 				"--cleanup-start=0:00",
 				"--cleanup-end=23:00",
