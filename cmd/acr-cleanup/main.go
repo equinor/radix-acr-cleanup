@@ -127,6 +127,9 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to create ACR client")
 	}
+	if _, err := acrClient.ListRepositories(ctx); err != nil {
+		log.Fatal().Err(err).Msg("Failed to authenticate with ACR")
+	}
 
 	kubeClient, radixClient := getKubernetesClient()
 	kubeutil, err := kube.New(kubeClient, radixClient, nil, nil)
