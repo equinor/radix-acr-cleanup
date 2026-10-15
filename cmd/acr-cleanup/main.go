@@ -74,7 +74,6 @@ func main() {
 	var (
 		period               = fs.Duration("period", time.Minute*60, "Interval between checks")
 		registry             = fs.String("registry", "", "Name of the ACR registry (Required)")
-		subscriptionID       = fs.String("subscription-id", "", "Azure subscription ID for the ACR registry (Required)")
 		clusterType          = fs.String("cluster-type", "", "Type of cluster (Required)")
 		currentClusterName   = fs.String("current-cluster-name", "", "Name of the current cluster (Required)")
 		activeClusterName    = fs.String("active-cluster-name", "", "Name of the active cluster (Required)")
@@ -95,7 +94,7 @@ func main() {
 		return s == nil || len(strings.TrimSpace(*s)) == 0
 	}
 
-	if stringIsNilOrEmpty(registry) || stringIsNilOrEmpty(subscriptionID) || stringIsNilOrEmpty(clusterType) || stringIsNilOrEmpty(activeClusterName) || stringIsNilOrEmpty(currentClusterName) {
+	if stringIsNilOrEmpty(registry) || stringIsNilOrEmpty(clusterType) || stringIsNilOrEmpty(activeClusterName) || stringIsNilOrEmpty(currentClusterName) {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -110,7 +109,6 @@ func main() {
 	log.Info().Msgf("Cleanup end: %s", *cleanupEnd)
 	log.Info().Msgf("Period: %s", *period)
 	log.Info().Msgf("Registry: %s", *registry)
-	log.Info().Msgf("Subscription ID: %s", *subscriptionID)
 	log.Info().Msgf("Clustertype: %s", *clusterType)
 	log.Info().Msgf("Active cluster name: %s", *activeClusterName)
 	log.Info().Msgf("Current cluster name: %s", *currentClusterName)
@@ -125,6 +123,14 @@ func main() {
 		return
 	}
 
+	acrClient, err := acr.NewClient(*registry)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create ACR client")
+	}
+	if err := acrClient.CheckAccess(ctx); err != nil {
+		log.Fatal().Err(err).Msg("Failed to authenticate with ACR")
+	}
+
 	kubeClient, radixClient := getKubernetesClient()
 	kubeutil, err := kube.New(kubeClient, radixClient, nil, nil)
 	if err != nil {
@@ -132,7 +138,7 @@ func main() {
 	}
 
 	go maintainImages(ctx, kubeutil, *cleanupDays, *cleanupStart, *cleanupEnd, *period,
-		*registry, *subscriptionID, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
+		acrClient, *clusterType, *deleteUntagged, *retainLatestUntagged, *performDelete, *whitelisted)
 
 	http.Handle("/metrics", promhttp.Handler())
 	log.Info().Msg("API is serving on port :8080")
@@ -160,7 +166,7 @@ func initZerologger(ctx context.Context, logLevel string, prettyPrint bool) (con
 	return ctx, nil
 }
 
-func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, registry, subscriptionID, clusterType string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []string, cleanupStart, cleanupEnd string, period time.Duration, acrClient *acr.Client, clusterType string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	window, err := timewindow.New(cleanupDays, cleanupStart, cleanupEnd, timezone)
 
 	if err != nil {
@@ -173,7 +179,7 @@ func maintainImages(ctx context.Context, kubeutil *kube.Kube, cleanupDays []stri
 		now := time.Now()
 		if window.Contains(now) {
 			log.Info().Msgf("Start deleting images %s", now)
-			deleteImagesBelongingTo(ctx, kubeutil, registry, subscriptionID, clusterType, deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
+			deleteImagesBelongingTo(ctx, kubeutil, acrClient, clusterType, deleteUntagged, retainLatestUntagged, performDelete, whitelisted)
 		} else {
 			log.Info().Msgf("%s is outside of window. Continue sleeping", now)
 		}
@@ -205,7 +211,7 @@ func parseFlagsFromArgs(fs *pflag.FlagSet) {
 	}
 }
 
-func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry, subscriptionID, clusterType string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
+func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, acrClient *acr.Client, clusterType string, deleteUntagged bool, retainLatestUntagged int, performDelete bool, whitelisted []string) {
 	start := time.Now()
 
 	defer func() {
@@ -219,7 +225,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 		return
 	}
 
-	repositories, err := acr.ListRepositories(registry, subscriptionID)
+	repositories, err := acrClient.ListRepositories(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to get repositories")
 		return
@@ -234,7 +240,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 		}
 
 		log.Info().Str("repo", repository).Msg("Process repository")
-		manifests, err := acr.ListManifests(registry, subscriptionID, repository)
+		manifests, err := acrClient.ListManifests(ctx, repository)
 		if err != nil {
 			log.Error().Str("repo", repository).Err(err).Msg("Failed to list manifests for repository")
 			addListManifestError(clusterType, repository)
@@ -270,7 +276,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 				if numManifests > retainLatestUntagged {
 					log.Debug().Str("repo", repository).Str("digest", manifest.Digest).Msg("Manifest is untagged, and is mandated for deletion")
 					untagged := true
-					deleteManifest(registry, subscriptionID, repository, clusterType, performDelete, untagged, manifest)
+					deleteManifest(ctx, acrClient, repository, clusterType, performDelete, untagged, manifest)
 					numManifests--
 				} else {
 					addUntaggedImageRetained(clusterType, repository)
@@ -289,7 +295,7 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 
 			if !manifestExistInCluster {
 				untagged := false
-				deleteManifest(registry, subscriptionID, repository, clusterType, performDelete, untagged, manifest)
+				deleteManifest(ctx, acrClient, repository, clusterType, performDelete, untagged, manifest)
 			} else {
 				addImageRetained(clusterType, repository)
 				log.Debug().Str("repo", repository).Str("digest", manifest.Digest).Msg("Manifest exists in cluster")
@@ -304,9 +310,9 @@ func deleteImagesBelongingTo(ctx context.Context, kubeutil *kube.Kube, registry,
 	}
 }
 
-func deleteManifest(registry, subscriptionID, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
+func deleteManifest(ctx context.Context, acrClient *acr.Client, repository, clusterType string, performDelete, untagged bool, manifest manifest.Data) {
 	if performDelete {
-		if err := acr.DeleteManifest(registry, subscriptionID, repository, manifest); err != nil {
+		if err := acrClient.DeleteManifest(ctx, repository, manifest); err != nil {
 			log.Error().Err(err).Str("repo", repository).Str("digest", manifest.Digest).Strs("tags", manifest.Tags).Msg("Error deleting manifest")
 			addImageDeleteError(clusterType, repository)
 			return
