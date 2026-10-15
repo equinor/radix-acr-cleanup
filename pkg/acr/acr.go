@@ -36,7 +36,7 @@ func (client *Client) ListRepositories(ctx context.Context) ([]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to list repositories: %w", err)
 		}
-		for _, repository := range page.Repositories.Names {
+		for _, repository := range page.Names {
 			if repository != nil {
 				repositories = append(repositories, *repository)
 			}
@@ -57,7 +57,7 @@ func (client *Client) ListManifests(ctx context.Context, repository string) ([]m
 		if err != nil {
 			return nil, fmt.Errorf("failed to list manifests: %w", err)
 		}
-		for _, attributes := range page.Manifests.Attributes {
+		for _, attributes := range page.Attributes {
 			if attributes == nil {
 				continue
 			}
