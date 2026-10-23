@@ -31,5 +31,5 @@ HAS_GOLANGCI_LINT := $(shell command -v golangci-lint;)
 
 bootstrap:
 ifndef HAS_GOLANGCI_LINT
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.7.2
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
 endif
