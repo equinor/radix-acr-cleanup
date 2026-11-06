@@ -2,7 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.5](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.4..v1.4.5) - 2026-08-31
+## [1.5.0](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.5..v1.5.0) - 2026-10-30
+
+### 🚀 Features
+
+- Authenticate using workload identity (#147) - ([2e874e8](https://github.com/equinor/radix-acr-cleanup/commit/2e874e852ed26692a1b824451560e020087b26dd)) by @nilsgstrabo in [#147](https://github.com/equinor/radix-acr-cleanup/pull/147)
+
+- Improve logging and configure subscription (#151) - ([4185748](https://github.com/equinor/radix-acr-cleanup/commit/41857484b81c7c855b570273c37cad80e5cedf33)) by @nilsgstrabo in [#151](https://github.com/equinor/radix-acr-cleanup/pull/151)
+
+- Replace Azure CLI commands with Azure SDK (#155) - ([0b0fe0f](https://github.com/equinor/radix-acr-cleanup/commit/0b0fe0f9cbb4ec9ee6f15fe69021ca77dbc1ea8c)) by @nilsgstrabo in [#155](https://github.com/equinor/radix-acr-cleanup/pull/155)
+
+
+### 🐛 Bug Fixes
+
+- Improve az command error handling (#153) - ([9ef8164](https://github.com/equinor/radix-acr-cleanup/commit/9ef816481624ef64d05a5fd94e04b06b84996107)) by @nilsgstrabo in [#153](https://github.com/equinor/radix-acr-cleanup/pull/153)
+
+- Bump github.com/kedacore/keda/v2 from 2.20.1 to 2.21.0 in the go_modules group across 1 directory (#157) - ([98ce550](https://github.com/equinor/radix-acr-cleanup/commit/98ce550884c3f55951342594483e1aee1641e921)) by @dependabot[bot] in [#157](https://github.com/equinor/radix-acr-cleanup/pull/157)
+
+
+## [1.4.5](https://github.com/equinor/radix-acr-cleanup/compare/v1.4.4..v1.4.5) - 2026-09-01
 
 ### 🐛 Bug Fixes
 
